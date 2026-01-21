@@ -87,7 +87,7 @@
                 return;
             }
 
-            const { totalsPerSupplier, winnerId, bestMixTotal } = calculations; // Incluído bestMixTotal
+            const { totalsPerSupplier, winnerId, bestMixTotal } = calculations;
             const rankedSuppliers = quote.suppliers.map(s => ({
                 id: s.id, name: s.name, total: totalsPerSupplier[s.id]
             })).filter(s => s.total > 0).sort((a, b) => a.total - b.total);
@@ -193,11 +193,16 @@
                                             const price = parseFloat(quote.prices[`${item.id}_${s.id}`]) || 0;
                                             const isBest = minRowPrice !== null && price === minRowPrice;
                                             const isWinnerCol = s.id === winnerId;
+                                            const key = `${item.id}_${s.id}`;
+                                            const qty = quote.quantities?.[key] !== undefined ? parseFloat(quote.quantities[key]) : item.qty;
+                                            const qtyDiff = qty !== item.qty;
+                                            
                                             return `
                                                 <td class="py-3 text-right ${isWinnerCol ? 'bg-blue-50/30 px-2' : ''}">
                                                     <span class="${isBest ? 'font-bold text-green-700' : ''}">
                                                         ${price ? `R$ ${price.toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : '-'}
                                                     </span>
+                                                    ${qtyDiff ? `<div class="text-[10px] text-slate-400 font-medium">Qtd: ${qty}</div>` : ''}
                                                 </td>
                                             `;
                                         }).join('')}
@@ -365,7 +370,8 @@
                         let sum = 0;
                         activeQuote.items.forEach(i => {
                             const key = `${i.id}_${s.id}`;
-                            sum += (parseFloat(activeQuote.prices[key]) || 0) * i.qty;
+                            const qty = activeQuote.quantities?.[key] !== undefined ? parseFloat(activeQuote.quantities[key]) : i.qty;
+                            sum += (parseFloat(activeQuote.prices[key]) || 0) * qty;
                         });
                         totalsPerSupplier[s.id] = sum;
                         if (sum > 0 && sum < minTotal) {
@@ -406,7 +412,8 @@
                     status: 'Em Aberto',
                     items: [],
                     suppliers: [],
-                    prices: {}
+                    prices: {},
+                    quantities: {}
                 };
                 // Adiciona imediatamente à lista e salva (devido ao useEffect)
                 setQuotations(prev => [newQuote, ...prev]);
@@ -787,6 +794,13 @@
             const [newSupplierName, setNewSupplierName] = useState('');
             const [editingItemId, setEditingItemId] = useState(null);
             const [tempItemName, setTempItemName] = useState('');
+            
+            // Novos estados para edição
+            const [editingSupplierId, setEditingSupplierId] = useState(null);
+            const [tempSupplierName, setTempSupplierName] = useState('');
+            
+            const [editingItemQtyId, setEditingItemQtyId] = useState(null);
+            const [tempItemQty, setTempItemQty] = useState('');
 
             const addItem = () => {
                 if (!newItemName) return;
@@ -807,6 +821,11 @@
                 setQuote({ ...quote, prices: { ...quote.prices, [key]: value } });
             };
 
+            const updateQuantity = (itemId, supplierId, value) => {
+                const key = `${itemId}_${supplierId}`;
+                setQuote({ ...quote, quantities: { ...quote.quantities, [key]: value } });
+            };
+
             const startEditingItem = (item) => {
                 setEditingItemId(item.id);
                 setTempItemName(item.name);
@@ -817,6 +836,33 @@
                     setQuote({ ...quote, items: quote.items.map(i => i.id === id ? { ...i, name: tempItemName } : i) });
                 }
                 setEditingItemId(null);
+            };
+            
+            // Funções para editar nome do fornecedor
+            const startEditingSupplier = (supplier) => {
+                setEditingSupplierId(supplier.id);
+                setTempSupplierName(supplier.name);
+            };
+
+            const saveSupplierName = (id) => {
+                if (tempSupplierName.trim()) {
+                    setQuote({ ...quote, suppliers: quote.suppliers.map(s => s.id === id ? { ...s, name: tempSupplierName } : s) });
+                }
+                setEditingSupplierId(null);
+            };
+            
+            // Funções para editar quantidade base do item
+            const startEditingItemQty = (item) => {
+                setEditingItemQtyId(item.id);
+                setTempItemQty(item.qty);
+            };
+
+            const saveItemQty = (id) => {
+                const newQty = parseFloat(tempItemQty);
+                if (!isNaN(newQty) && newQty > 0) {
+                    setQuote({ ...quote, items: quote.items.map(i => i.id === id ? { ...i, qty: newQty } : i) });
+                }
+                setEditingItemQtyId(null);
             };
 
             const removeItem = (id) => setQuote({ ...quote, items: quote.items.filter(i => i.id !== id) });
@@ -832,7 +878,8 @@
                     let sum = 0;
                     quote.items.forEach(i => {
                         const key = `${i.id}_${s.id}`;
-                        sum += (parseFloat(quote.prices[key]) || 0) * i.qty;
+                        const qty = quote.quantities?.[key] !== undefined ? parseFloat(quote.quantities[key]) : i.qty;
+                        sum += (parseFloat(quote.prices[key]) || 0) * qty;
                     });
                     totalsPerSupplier[s.id] = sum;
                     if (sum > 0 && sum < minTotal) { minTotal = sum; winnerId = s.id; }
@@ -842,9 +889,12 @@
                     let minItemPrice = Infinity;
                     let hasPrice = false;
                     quote.suppliers.forEach(s => {
-                        const p = parseFloat(quote.prices[`${i.id}_${s.id}`]) || 0;
+                        const key = `${i.id}_${s.id}`;
+                        const p = parseFloat(quote.prices[key]) || 0;
+                        const qty = quote.quantities?.[key] !== undefined ? parseFloat(quote.quantities[key]) : i.qty;
+                        
                         if (p > 0) {
-                            const total = p * i.qty;
+                            const total = p * qty;
                             if (total < minItemPrice) minItemPrice = total;
                             hasPrice = true;
                         }
@@ -1027,7 +1077,24 @@
                                         <th className="py-4 px-4 text-center border-r border-slate-100 w-24">Qtd.</th>
                                         {quote.suppliers.map(s => (
                                             <th key={s.id} className={`py-4 px-4 text-center border-r border-slate-100 min-w-[140px] relative group ${calculations.winnerId === s.id ? 'bg-emerald-50 text-emerald-800' : ''}`}>
-                                                {s.name}
+                                                {editingSupplierId === s.id ? (
+                                                    <input 
+                                                        autoFocus
+                                                        className="w-full bg-white border border-blue-400 rounded px-2 py-1 text-center text-xs font-bold text-slate-700 outline-none"
+                                                        value={tempSupplierName}
+                                                        onChange={(e) => setTempSupplierName(e.target.value)}
+                                                        onBlur={() => saveSupplierName(s.id)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && saveSupplierName(s.id)}
+                                                    />
+                                                ) : (
+                                                    <span 
+                                                        className="cursor-pointer hover:text-blue-600 transition"
+                                                        onClick={() => startEditingSupplier(s)}
+                                                        title="Clique para editar nome"
+                                                    >
+                                                        {s.name}
+                                                    </span>
+                                                )}
                                                 <button onClick={() => removeSupplier(s.id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 transition"><Icons.Trash2 className="h-3 w-3" /></button>
                                             </th>
                                         ))}
@@ -1062,10 +1129,32 @@
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td className="p-3 text-center border-r border-slate-50"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold">{item.qty} {item.unit}</span></td>
+                                                <td className="p-3 text-center border-r border-slate-50">
+                                                    {editingItemQtyId === item.id ? (
+                                                        <input 
+                                                            autoFocus
+                                                            type="number"
+                                                            className="w-16 bg-white border border-blue-400 rounded px-1 py-0.5 text-center text-xs font-bold outline-none"
+                                                            value={tempItemQty}
+                                                            onChange={(e) => setTempItemQty(e.target.value)}
+                                                            onBlur={() => saveItemQty(item.id)}
+                                                            onKeyDown={(e) => e.key === 'Enter' && saveItemQty(item.id)}
+                                                        />
+                                                    ) : (
+                                                        <span 
+                                                            className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold cursor-pointer hover:bg-slate-200 transition"
+                                                            onClick={() => startEditingItemQty(item)}
+                                                            title="Clique para editar quantidade base"
+                                                        >
+                                                            {item.qty} {item.unit}
+                                                        </span>
+                                                    )}
+                                                </td>
                                                 {quote.suppliers.map(s => {
                                                     const priceVal = parseFloat(quote.prices[`${item.id}_${s.id}`]) || 0;
                                                     const isBestPrice = minRowPrice !== null && priceVal === minRowPrice;
+                                                    const specificQty = quote.quantities[`${item.id}_${s.id}`];
+                                                    const displayQty = specificQty !== undefined ? specificQty : item.qty;
 
                                                     return (
                                                         <td key={s.id} className={`p-2 border-r border-slate-50 ${isBestPrice ? 'bg-green-100/60 font-medium' : ''}`}>
@@ -1079,8 +1168,20 @@
                                                                     onChange={(e) => updatePrice(item.id, s.id, e.target.value)} 
                                                                 />
                                                             </div>
+                                                            <div className="flex items-center justify-end gap-1 mt-1 px-1">
+                                                                <span className="text-[10px] text-slate-400">Qtd:</span>
+                                                                <input 
+                                                                    type="number" 
+                                                                    className="w-12 text-right bg-transparent border-b border-slate-200 text-[10px] text-slate-500 focus:border-blue-400 outline-none"
+                                                                    placeholder={item.qty}
+                                                                    value={specificQty || ''}
+                                                                    onChange={(e) => updateQuantity(item.id, s.id, e.target.value)}
+                                                                />
+                                                            </div>
                                                             {quote.prices[`${item.id}_${s.id}`] && (
-                                                                <div className="text-[10px] text-right text-slate-400 mt-1 font-mono px-2">Total: {(parseFloat(quote.prices[`${item.id}_${s.id}`]) * item.qty).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+                                                                <div className="text-[10px] text-right text-slate-400 mt-1 font-mono px-2 border-t border-dashed border-slate-200 pt-1">
+                                                                    Total: {(parseFloat(quote.prices[`${item.id}_${s.id}`]) * parseFloat(displayQty)).toLocaleString('pt-BR', {minimumFractionDigits: 2})}
+                                                                </div>
                                                             )}
                                                         </td>
                                                     );
