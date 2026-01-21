@@ -498,13 +498,48 @@
             const recentQuotes = useMemo(() => {
                 return [...quotations].sort((a, b) => b.id - a.id).slice(0, 4);
             }, [quotations]);
+            
+            // Dicas rotativas
+            const tips = [
+                {
+                    title: "Dica Pro",
+                    text: "Adicione ao menos 3 fornecedores por cotação. O sistema irá automaticamente destacar as melhores oportunidades e sugerir compras fracionadas.",
+                    icon: Icons.Lightbulb
+                },
+                {
+                    title: "Histórico de Preços",
+                    text: "Consulte cotações antigas antes de fechar negócio. Identificar a variação de preço ao longo do tempo ajuda a negociar melhor.",
+                    icon: Icons.TrendingUp
+                },
+                {
+                    title: "Prazos de Entrega",
+                    text: "Sempre registre o prazo de entrega nas observações. O menor preço nem sempre compensa se o material não chegar a tempo.",
+                    icon: Icons.Clock
+                },
+                 {
+                    title: "Agrupamento",
+                    text: "Tente agrupar compras pequenas em uma única cotação maior. Fornecedores tendem a dar mais descontos para volumes maiores.",
+                    icon: Icons.Package
+                }
+            ];
+
+            const [currentTipIndex, setCurrentTipIndex] = useState(0);
+
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setCurrentTipIndex((prev) => (prev + 1) % tips.length);
+                }, 8000);
+                return () => clearInterval(interval);
+            }, []);
+
+            const currentTip = tips[currentTipIndex];
 
             return (
                 <div className="space-y-8 animate-fade-in no-print">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-2">
                         <div>
-                            <h2 className="text-3xl font-bold text-slate-800">Olá, Gestor</h2>
-                            <p className="text-slate-500 mt-1">Aqui está o resumo das suas atividades.</p>
+                            <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Painel de Controle</h2>
+                            <p className="text-slate-500 mt-1">Acompanhe o desempenho das suas compras.</p>
                         </div>
                         <button onClick={onNew} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl flex items-center shadow-lg shadow-blue-200 transition transform hover:-translate-y-0.5 active:translate-y-0">
                             <Icons.Plus className="h-5 w-5 mr-2" /> Criar Nova Cotação
@@ -513,94 +548,110 @@
 
                     {/* Grid de Stats Moderno */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between group hover:shadow-md transition cursor-default">
-                             <div>
-                                <p className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-1">Cotações Totais</p>
-                                <h3 className="text-3xl font-bold text-slate-800">{stats.totalQuotes}</h3>
+                        <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-slate-100 flex flex-col justify-between h-32 hover:border-blue-200 transition-all cursor-default relative overflow-hidden group">
+                             <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full -mr-10 -mt-10 transition-transform group-hover:scale-110"></div>
+                             <div className="relative z-10">
+                                <p className="text-sm font-bold text-slate-400 uppercase tracking-wide mb-1">Cotações Totais</p>
+                                <h3 className="text-4xl font-bold text-slate-800">{stats.totalQuotes}</h3>
                             </div>
-                            <div className="p-4 bg-blue-50 rounded-2xl text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition">
-                                <Icons.FileText className="h-6 w-6" />
+                            <div className="relative z-10 flex items-center text-blue-600 text-sm font-medium">
+                                <Icons.FileText className="h-4 w-4 mr-1" /> Ver todas
                             </div>
                         </div>
                         
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between group hover:shadow-md transition cursor-default">
-                             <div>
-                                <p className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-1">Finalizadas</p>
-                                <h3 className="text-3xl font-bold text-slate-800">{stats.completedQuotes}</h3>
+                        <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_-3px_rgba(147,51,234,0.1)] border border-slate-100 flex flex-col justify-between h-32 hover:border-purple-200 transition-all cursor-default relative overflow-hidden group">
+                             <div className="absolute top-0 right-0 w-24 h-24 bg-purple-50 rounded-full -mr-10 -mt-10 transition-transform group-hover:scale-110"></div>
+                             <div className="relative z-10">
+                                <p className="text-sm font-bold text-slate-400 uppercase tracking-wide mb-1">Finalizadas</p>
+                                <h3 className="text-4xl font-bold text-slate-800">{stats.completedQuotes}</h3>
                             </div>
-                            <div className="p-4 bg-purple-50 rounded-2xl text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition">
-                                <Icons.Check className="h-6 w-6" />
+                            <div className="relative z-10 flex items-center text-purple-600 text-sm font-medium">
+                                <Icons.Check className="h-4 w-4 mr-1" /> Concluídas
                             </div>
                         </div>
 
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between group hover:shadow-md transition cursor-default">
-                             <div className="overflow-hidden">
-                                <p className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-1">Top Fornecedor</p>
-                                <h3 className="text-2xl font-bold text-slate-800 truncate" title={stats.topWinner}>{stats.topWinner}</h3>
+                        <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_-3px_rgba(234,88,12,0.1)] border border-slate-100 flex flex-col justify-between h-32 hover:border-orange-200 transition-all cursor-default relative overflow-hidden group">
+                             <div className="absolute top-0 right-0 w-24 h-24 bg-orange-50 rounded-full -mr-10 -mt-10 transition-transform group-hover:scale-110"></div>
+                             <div className="relative z-10 overflow-hidden">
+                                <p className="text-sm font-bold text-slate-400 uppercase tracking-wide mb-1">Top Fornecedor</p>
+                                <h3 className="text-2xl font-bold text-slate-800 truncate leading-tight" title={stats.topWinner}>{stats.topWinner}</h3>
                             </div>
-                            <div className="p-4 bg-orange-50 rounded-2xl text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition shrink-0 ml-4">
-                                <Icons.Trophy className="h-6 w-6" />
+                            <div className="relative z-10 flex items-center text-orange-600 text-sm font-medium">
+                                <Icons.Trophy className="h-4 w-4 mr-1" /> Liderando
                             </div>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Lista de Atividade Recente (Substituindo o Gráfico) */}
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 col-span-2">
+                        {/* Lista de Atividade Recente (Bento Grid Style) */}
+                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 col-span-2">
                             <h3 className="font-bold text-slate-800 mb-6 flex items-center text-lg">
                                 <Icons.Clock className="h-5 w-5 mr-2 text-slate-400" /> Atividades Recentes
                             </h3>
                             
-                            <div className="space-y-4">
+                            <div className="grid gap-3">
                                 {recentQuotes.map(q => (
                                     <div 
                                         key={q.id} 
                                         onClick={() => onOpen(q)}
-                                        className="flex items-center justify-between p-4 bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 rounded-xl cursor-pointer transition group"
+                                        className="flex items-center justify-between p-4 bg-slate-50 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-2xl cursor-pointer transition-all group"
                                     >
                                         <div className="flex items-center gap-4">
-                                            <div className="bg-white p-2.5 rounded-lg border border-slate-100 text-slate-400 group-hover:text-blue-600 transition">
+                                            <div className="bg-white p-3 rounded-xl border border-slate-100 text-slate-400 group-hover:text-blue-600 group-hover:border-blue-100 transition shadow-sm">
                                                 <Icons.FileText className="h-5 w-5" />
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-slate-700 text-sm">{q.title || "Nova Cotação"}</h4>
-                                                <span className="text-xs text-slate-400">{new Date(q.date).toLocaleDateString('pt-BR')}</span>
+                                                <h4 className="font-bold text-slate-700 text-sm group-hover:text-blue-700 transition">{q.title || "Nova Cotação"}</h4>
+                                                <span className="text-xs text-slate-400 flex items-center mt-0.5">
+                                                    {new Date(q.date).toLocaleDateString('pt-BR')}
+                                                </span>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${q.status === 'Finalizada' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${q.status === 'Finalizada' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
                                                 {q.status}
                                             </span>
-                                            <Icons.ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-blue-500" />
+                                            <div className="h-8 w-8 rounded-full bg-slate-200 group-hover:bg-blue-600 flex items-center justify-center transition">
+                                                <Icons.ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-white transition" />
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
                                 {recentQuotes.length === 0 && (
-                                    <div className="text-center py-10 text-slate-400 italic bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-                                        Nenhuma cotação recente encontrada.
+                                    <div className="text-center py-12 text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                                        <p>Nenhuma cotação recente encontrada.</p>
+                                        <button onClick={onNew} className="text-blue-600 text-sm font-bold mt-2 hover:underline">Criar a primeira</button>
                                     </div>
                                 )}
                             </div>
                         </div>
 
-                        {/* Card Dica Pro */}
-                        <div className="bg-gradient-to-br from-indigo-600 to-blue-700 p-8 rounded-2xl shadow-lg text-white relative overflow-hidden flex flex-col justify-between">
+                        {/* Card Dica Pro - Rotativo */}
+                        <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-3xl shadow-xl text-white relative overflow-hidden flex flex-col justify-between h-full min-h-[300px]">
                             <div>
-                                <div className="absolute -right-10 -top-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
-                                <h3 className="font-bold text-xl mb-4 relative z-10 flex items-center">
-                                    <Icons.Lightbulb className="h-5 w-5 mr-2" /> Dica Pro
-                                </h3>
-                                <p className="text-indigo-100 mb-8 text-sm leading-relaxed relative z-10">
-                                    Adicione ao menos 3 fornecedores por cotação. O sistema irá automaticamente destacar as melhores oportunidades e sugerir compras fracionadas.
-                                </p>
-                            </div>
-                            <div className="bg-white/10 backdrop-blur-sm p-5 rounded-xl border border-white/10 relative z-10">
-                                <div className="flex justify-between text-sm font-medium mb-2">
-                                    <span>Meta de Economia</span>
-                                    <span>85%</span>
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+                                <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-500 opacity-20 rounded-full blur-3xl -ml-10 -mb-10 pointer-events-none"></div>
+                                
+                                <div className="bg-white/10 w-12 h-12 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md border border-white/10 transition-all">
+                                    <currentTip.icon className="h-6 w-6 text-yellow-300" />
                                 </div>
-                                <div className="w-full bg-black/20 rounded-full h-2.5">
-                                    <div className="bg-gradient-to-r from-green-300 to-green-500 h-2.5 rounded-full shadow-lg" style={{width: '85%'}}></div>
+                                
+                                <div className="animate-fade-in" key={currentTipIndex}>
+                                    <h3 className="font-bold text-2xl mb-3 relative z-10">{currentTip.title}</h3>
+                                    <p className="text-slate-300 text-sm leading-relaxed relative z-10">
+                                        {currentTip.text}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div className="relative z-10 mt-8">
+                                <div className="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                                    <span>Dica {currentTipIndex + 1} de {tips.length}</span>
+                                    <div className="flex space-x-1">
+                                        {tips.map((_, idx) => (
+                                            <div key={idx} className={`h-1.5 w-1.5 rounded-full transition-colors ${idx === currentTipIndex ? 'bg-white' : 'bg-white/20'}`} />
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -618,76 +669,106 @@
                         <h2 className="text-2xl font-bold text-slate-800">Minhas Cotações</h2>
                         <button onClick={onNew} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl flex items-center shadow-sm transition font-medium"><Icons.Plus className="h-5 w-5 mr-2" /> Nova Cotação</button>
                     </div>
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                        <table className="w-full text-left">
-                            <thead className="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
-                                <tr>
-                                    <th className="px-6 py-5">Título</th>
-                                    <th className="px-6 py-5 hidden md:table-cell">Data</th>
-                                    <th className="px-6 py-5">Status</th>
-                                    <th className="px-6 py-5 hidden md:table-cell">Vencedor</th>
-                                    <th className="px-6 py-5 text-right">Total</th>
-                                    <th className="px-6 py-5"></th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {quotations.map(q => (
-                                    <tr key={q.id} className="hover:bg-slate-50 transition cursor-pointer group" onClick={() => onOpen(q)}>
-                                        <td className="px-6 py-5 font-semibold text-slate-700 flex items-center">
-                                            <div className="bg-slate-100 p-2 rounded-lg mr-3 group-hover:bg-white group-hover:shadow-sm transition"><Icons.FileText className="h-5 w-5 text-slate-400 group-hover:text-blue-500" /></div>
-                                            {q.title || "Nova Cotação"}
-                                        </td>
-                                        <td className="px-6 py-5 text-slate-500 hidden md:table-cell text-sm">{new Date(q.date).toLocaleDateString('pt-BR')}</td>
-                                        <td className="px-6 py-5"><span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${q.status === 'Finalizada' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{q.status}</span></td>
-                                        <td className="px-6 py-5 text-slate-600 hidden md:table-cell text-sm">{q.winner || '-'}</td>
-                                        <td className="px-6 py-5 text-right font-mono text-slate-700 font-medium">{q.total ? `R$ ${q.total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : '-'}</td>
-                                        <td className="px-6 py-5 text-right whitespace-nowrap">
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setQuoteToDelete(q);
-                                                }}
-                                                className="inline-flex p-2 mr-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                                                title="Excluir Cotação"
-                                            >
-                                                <Icons.Trash2 className="h-5 w-5" />
-                                            </button>
-                                            <Icons.ChevronRight className="inline-block h-5 w-5 text-slate-300 group-hover:text-blue-500" />
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        {quotations.length === 0 && <div className="p-12 text-center text-slate-400">Nenhuma cotação encontrada. Comece criando uma nova!</div>}
+                    
+                    {/* Lista em Grid de Cards Modernos */}
+                    <div className="grid gap-4">
+                        {quotations.map(q => (
+                            <div 
+                                key={q.id} 
+                                onClick={() => onOpen(q)}
+                                className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 cursor-pointer group relative overflow-hidden"
+                            >
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`p-3 rounded-xl transition-colors ${q.status === 'Finalizada' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
+                                            {q.status === 'Finalizada' ? <Icons.Check className="h-6 w-6" /> : <Icons.FileText className="h-6 w-6" />}
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-slate-800 text-lg group-hover:text-blue-600 transition">{q.title || "Nova Cotação"}</h3>
+                                            <p className="text-xs text-slate-400 font-medium flex items-center mt-1">
+                                                <Icons.Clock className="h-3 w-3 mr-1" /> {new Date(q.date).toLocaleDateString('pt-BR')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Botão de Excluir (Discreto) */}
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setQuoteToDelete(q);
+                                        }}
+                                        className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition opacity-0 group-hover:opacity-100"
+                                        title="Excluir"
+                                    >
+                                        <Icons.Trash2 className="h-5 w-5" />
+                                    </button>
+                                </div>
+
+                                <div className="flex items-end justify-between border-t border-slate-50 pt-4">
+                                    <div>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Vencedor</p>
+                                        <div className="flex items-center text-slate-700 font-medium text-sm">
+                                            {q.winner && q.winner !== 'N/A' ? (
+                                                <><Icons.Trophy className="h-4 w-4 text-yellow-500 mr-2" /> {q.winner}</>
+                                            ) : (
+                                                <span className="text-slate-400 italic">Em aberto</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total</p>
+                                        <p className={`text-xl font-bold font-mono ${q.status === 'Finalizada' ? 'text-emerald-600' : 'text-slate-800'}`}>
+                                            {q.total ? `R$ ${q.total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : '-'}
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                {/* Status Badge flutuante se necessário, ou integrado visualmente */}
+                                <div className={`absolute top-0 right-0 w-1.5 h-full ${q.status === 'Finalizada' ? 'bg-emerald-500' : 'bg-blue-500'} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
+                            </div>
+                        ))}
+                        
+                        {quotations.length === 0 && (
+                            <div className="p-12 text-center text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">
+                                Nenhuma cotação encontrada. Comece criando uma nova!
+                            </div>
+                        )}
                     </div>
 
-                    {/* Modal de Confirmação de Exclusão */}
+                    {/* Modal de Confirmação de Exclusão (Novo Layout) */}
                     {quoteToDelete && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in" onClick={() => setQuoteToDelete(null)}>
-                            <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 transform transition-all scale-100" onClick={e => e.stopPropagation()}>
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={() => setQuoteToDelete(null)}>
+                            {/* Overlay transparente para capturar cliques fora */}
+                            <div className="absolute inset-0 bg-transparent" />
+                            
+                            <div className="bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 max-w-xs w-full overflow-hidden transform transition-all scale-100 relative z-10 p-6" onClick={e => e.stopPropagation()}>
                                 <div className="flex flex-col items-center text-center">
-                                    <div className="bg-red-100 p-4 rounded-full text-red-600 mb-4">
-                                        <Icons.Trash2 className="h-8 w-8" />
+                                    <div className="h-12 w-12 bg-red-50 rounded-2xl flex items-center justify-center mb-4 text-red-500 shadow-sm">
+                                        <Icons.Trash2 className="h-6 w-6" />
                                     </div>
-                                    <h3 className="text-xl font-bold text-slate-800 mb-2">Excluir Cotação?</h3>
-                                    <p className="text-slate-500 mb-6">
-                                        Tem certeza que deseja excluir <strong>"{quoteToDelete.title}"</strong>? Esta ação não pode ser desfeita.
+                                    
+                                    <h3 className="text-lg font-bold text-slate-800 mb-1">Apagar Cotação?</h3>
+                                    
+                                    <p className="text-sm text-slate-500 mb-6 leading-relaxed px-2">
+                                        Isso excluirá permanentemente <br/>
+                                        <span className="font-semibold text-slate-700">"{quoteToDelete.title}"</span>.
                                     </p>
-                                    <div className="flex gap-3 w-full">
-                                        <button 
-                                            onClick={() => setQuoteToDelete(null)}
-                                            className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition"
-                                        >
-                                            Cancelar
-                                        </button>
+                                    
+                                    <div className="flex flex-col w-full gap-2">
                                         <button 
                                             onClick={() => {
                                                 onDelete(quoteToDelete.id);
                                                 setQuoteToDelete(null);
                                             }}
-                                            className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium shadow-lg shadow-red-200 transition"
+                                            className="w-full py-2.5 px-4 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 shadow-md shadow-red-100 transition active:scale-95"
                                         >
-                                            Sim, Excluir
+                                            Sim, excluir agora
+                                        </button>
+                                        <button 
+                                            onClick={() => setQuoteToDelete(null)}
+                                            className="w-full py-2.5 px-4 bg-white text-slate-500 rounded-xl text-sm font-medium hover:bg-slate-50 hover:text-slate-700 transition"
+                                        >
+                                            Cancelar
                                         </button>
                                     </div>
                                 </div>
