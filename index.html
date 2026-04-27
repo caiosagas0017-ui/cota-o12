@@ -229,14 +229,22 @@
                         <input required type="number" id="item-m3" min="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
                     </div>
                 </div>
-                <div class="md:col-span-12 flex justify-end gap-3 mt-4 border-t border-slate-100 pt-6">
-                    <button type="button" id="btn-cancel-edit" class="hidden bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-2xl font-bold transition-all">
-                        Cancelar
-                    </button>
-                    <button type="submit" id="btn-submit-form" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-2xl font-bold transition-all flex items-center gap-2 shadow-lg shadow-indigo-200 hover:shadow-indigo-300">
-                        <i class="ph-bold ph-check"></i>
-                        Registar Produto
-                    </button>
+                <div class="md:col-span-12 flex flex-col md:flex-row items-center justify-between gap-4 mt-4 border-t border-slate-100 pt-6">
+                    <label class="flex items-center gap-3 cursor-pointer group">
+                        <input type="checkbox" id="item-apoio" checked class="w-5 h-5 accent-purple-600 rounded-lg cursor-pointer transition-all">
+                        <span class="text-sm font-bold text-slate-600 group-hover:text-purple-600 transition-colors">
+                            Incluir na exportação para o Sistema Apoio
+                        </span>
+                    </label>
+                    <div class="flex w-full md:w-auto gap-3">
+                        <button type="button" id="btn-cancel-edit" class="hidden flex-1 md:flex-none bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-2xl font-bold transition-all">
+                            Cancelar
+                        </button>
+                        <button type="submit" id="btn-submit-form" class="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 hover:shadow-indigo-300">
+                            <i class="ph-bold ph-check"></i>
+                            Registar Produto
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -652,7 +660,11 @@
                 'Tem a certeza que deseja forçar o avanço do histórico mensal manualmente?',
                 false,
                 () => {
-                    items = items.map(item => ({...item, month3: item.month2, month2: item.month1, month1: 0, bought: false}));
+                    items = items.map(item => {
+                        const newItem = {...item, month3: item.month2, month2: item.month1, month1: 0, bought: false};
+                        delete newItem.manualSuggestion; // Limpa as sugestões manuais ao virar o mês
+                        return newItem;
+                    });
                     localStorage.setItem('last_cycle_month', currentMonthId); saveData(); render();
                 }
             );
@@ -717,8 +729,16 @@
                 return; 
             }
 
-            const itemsWithCode = itemsToBuy.filter(item => item.code && item.code.trim() !== '');
-            const itemsWithoutCode = itemsToBuy.filter(item => !item.code || item.code.trim() === '');
+            // Ignora os itens que o usuário marcou para NUNCA exportar para o Apoio
+            const itemsToExport = itemsToBuy.filter(item => item.exportApoio !== false);
+
+            if (itemsToExport.length === 0) {
+                showModal('<i class="ph-bold ph-info text-blue-500"></i> Info', 'Os itens que precisam ser comprados estão marcados para NÃO exportar para o Apoio.', true);
+                return;
+            }
+
+            const itemsWithCode = itemsToExport.filter(item => item.code && item.code.trim() !== '');
+            const itemsWithoutCode = itemsToExport.filter(item => !item.code || item.code.trim() === '');
 
             if (itemsWithCode.length === 0) {
                 showModal('<i class="ph-bold ph-warning text-rose-500"></i> Erro', 'Nenhum item a comprar possui Código preenchido.', true); return;
@@ -777,6 +797,28 @@
         btnCancelEdit.addEventListener('click', exitEditMode);
         inputSafetyMargin.addEventListener('input', (e) => { safetyMargin = Number(e.target.value); localStorage.setItem('safety_margin', safetyMargin); render(); });
 
+        // Deteta as alterações manuais no campo de "Sugerido" da tabela
+        tableBody.addEventListener('change', (e) => {
+            if (e.target.classList.contains('input-sugestao')) {
+                const id = e.target.getAttribute('data-id');
+                const val = e.target.value;
+                items = items.map(item => {
+                    if (item.id === id) {
+                        if (val === '' || Number(val) < 0) {
+                            const newItem = { ...item };
+                            delete newItem.manualSuggestion;
+                            return newItem;
+                        } else {
+                            return { ...item, manualSuggestion: Number(val) };
+                        }
+                    }
+                    return item;
+                });
+                saveData();
+                render();
+            }
+        });
+
         // Adição e Edição de Produtos
         formAddItem.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -788,15 +830,16 @@
             const month1 = Number(document.getElementById('item-m1').value) || 0;
             const month2 = Number(document.getElementById('item-m2').value) || 0;
             const month3 = Number(document.getElementById('item-m3').value) || 0;
+            const exportApoio = document.getElementById('item-apoio').checked;
 
             if (!name) return;
 
             if (editingId) {
-                items = items.map(item => item.id === editingId ? { ...item, name, code, category, unit, currentStock, month1, month2, month3 } : item);
+                items = items.map(item => item.id === editingId ? { ...item, name, code, category, unit, currentStock, month1, month2, month3, exportApoio } : item);
                 exitEditMode();
             } else {
-                items.push({ id: Date.now().toString(), code, name, category, unit, currentStock, month1, month2, month3, bought: false });
-                formAddItem.reset(); document.getElementById('item-stock').value = 0; selectUnit.value = 'UN';
+                items.push({ id: Date.now().toString(), code, name, category, unit, currentStock, month1, month2, month3, bought: false, exportApoio });
+                formAddItem.reset(); document.getElementById('item-stock').value = 0; selectUnit.value = 'UN'; document.getElementById('item-apoio').checked = true;
             }
             saveData(); render();
         });
@@ -891,12 +934,13 @@
             document.getElementById('item-category').value = categories.includes(item.category) ? item.category : categories[0];
             document.getElementById('item-unit').value = item.unit || 'UN';
             document.getElementById('item-stock').value = item.currentStock; document.getElementById('item-m1').value = item.month1; document.getElementById('item-m2').value = item.month2; document.getElementById('item-m3').value = item.month3;
+            document.getElementById('item-apoio').checked = item.exportApoio !== false; // O padrão é sempre Sim (true)
             formTitle.innerHTML = '<div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center"><i class="ph-bold ph-pencil"></i></div> Editar Produto';
             btnSubmitForm.innerHTML = '<i class="ph-bold ph-check"></i> Salvar Alterações'; btnCancelEdit.classList.remove('hidden'); document.getElementById('item-name').focus(); window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function exitEditMode() {
-            editingId = null; formAddItem.reset(); document.getElementById('item-stock').value = 0; selectUnit.value = 'UN';
+            editingId = null; formAddItem.reset(); document.getElementById('item-stock').value = 0; selectUnit.value = 'UN'; document.getElementById('item-apoio').checked = true;
             formTitle.innerHTML = '<div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center"><i class="ph-bold ph-plus"></i></div> Adicionar Novo Produto';
             btnSubmitForm.innerHTML = '<i class="ph-bold ph-check"></i> Registar Produto'; btnCancelEdit.classList.add('hidden');
         }
@@ -909,7 +953,10 @@
                 const totalConsumo = item.month1 + item.month2 + item.month3;
                 const mediaMensal = Math.round(totalConsumo / 3);
                 const necessidadeComMargem = Math.ceil(mediaMensal * (1 + (safetyMargin / 100)));
-                const sugestaoCompra = Math.max(0, necessidadeComMargem - item.currentStock);
+                const sugestaoCalculada = Math.max(0, necessidadeComMargem - item.currentStock);
+                
+                // Aplica o ajuste manual do usuário, caso tenha digitado outro valor
+                const sugestaoCompra = item.manualSuggestion !== undefined ? item.manualSuggestion : sugestaoCalculada;
                 
                 let tendencia = 'stable';
                 if (item.month3 === 0 && item.month1 > 0) tendencia = 'up';
@@ -989,6 +1036,7 @@
                                 <div class="text-xs mt-1.5 flex flex-wrap gap-2 items-center">
                                     <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-bold tracking-wider">${item.category}</span>
                                     ${item.code ? `<span class="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-md font-bold tracking-wider"><i class="ph-bold ph-barcode"></i> ${escapeHTML(item.code)}</span>` : ''}
+                                    ${item.exportApoio === false ? `<span class="bg-rose-50 text-rose-600 px-2 py-0.5 rounded-md font-bold tracking-wider" title="Não será exportado para o Apoio"><i class="ph-bold ph-prohibit"></i> S/ Apoio</span>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -1008,8 +1056,9 @@
                         <div class="flex items-center justify-center gap-2">${item.mediaMensal} ${uom} ${trendIcon}</div>
                         <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Média</div>
                     </td>
-                    <td class="p-5 text-center bg-indigo-50/30">
-                        <span class="text-3xl md:text-4xl font-black ${item.sugestaoCompra > 0 ? 'text-indigo-600' : 'text-slate-300'}">${item.sugestaoCompra}</span>
+                    <td class="p-5 text-center bg-indigo-50/30 relative">
+                        ${item.manualSuggestion !== undefined ? `<div class="absolute top-2 right-2 w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center cursor-help" title="Modificado manualmente. Cálculo automático: ${Math.max(0, item.necessidadeTotal - item.currentStock)}"><i class="ph-fill ph-push-pin text-orange-500 text-[10px]"></i></div>` : ''}
+                        <input type="number" data-id="${item.id}" class="input-sugestao w-full max-w-[5rem] bg-transparent text-center text-3xl md:text-4xl font-black ${item.sugestaoCompra > 0 ? 'text-indigo-600' : 'text-slate-300'} border-b-2 border-transparent hover:border-indigo-200 focus:border-indigo-500 outline-none transition-colors" value="${item.sugestaoCompra}" min="0">
                         <span class="block text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">${uom}</span>
                     </td>
                     <td class="p-5 text-right no-print last:rounded-r-2xl min-w-[160px]">
