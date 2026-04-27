@@ -183,23 +183,24 @@
                 </div>
                 Adicionar Novo Produto
             </h2>
-            <form id="form-add-item" class="grid grid-cols-1 md:grid-cols-12 gap-5 items-end">
-                <div class="md:col-span-3">
+            <form id="form-add-item" class="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+                <div class="md:col-span-5">
                     <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Nome do Produto</label>
-                    <input required type="text" id="item-name" placeholder="Ex: Café em pó 500g" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-medium"/>
+                    <input required type="text" id="item-name" placeholder="Ex: Café em pó" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-medium"/>
                 </div>
-                <div class="md:col-span-2">
+                <div class="md:col-span-3">
                     <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1" title="Código idêntico ao do banco de dados Apoio">Código Apoio</label>
                     <input type="text" id="item-code" placeholder="Ex: 12345" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-medium"/>
                 </div>
-                <div class="md:col-span-2">
+                <div class="md:col-span-4">
                     <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Categoria</label>
                     <select id="item-category" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-medium appearance-none">
                         <!-- Opções geradas via JavaScript -->
                     </select>
                 </div>
-                <div class="md:col-span-1">
-                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 text-center">Unid.</label>
+
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 text-center">Unidade</label>
                     <select id="item-unit" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-bold text-slate-600 appearance-none text-center">
                         <option value="UN">UN</option>
                         <option value="KG">KG</option>
@@ -211,8 +212,12 @@
                         <option value="RL">RL</option>
                     </select>
                 </div>
-                <div class="md:col-span-1">
-                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 text-center">Estoque</label>
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 text-center" title="Qtd numa caixa fechada. Ex: se vende pacote com 12, coloque 12.">Múltiplo</label>
+                    <input required type="number" id="item-multiple" min="1" value="1" class="w-full p-3.5 bg-indigo-50 border border-indigo-100 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-indigo-700"/>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 text-center">Estoque Atual</label>
                     <input required type="number" id="item-stock" min="0" value="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-center font-black text-slate-700"/>
                 </div>
                 <div class="md:col-span-3 grid grid-cols-3 gap-3">
@@ -229,6 +234,11 @@
                         <input required type="number" id="item-m3" min="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
                     </div>
                 </div>
+                <div class="md:col-span-3">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Observações</label>
+                    <input type="text" id="item-notes" placeholder="Marca, fornecedor..." class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-medium"/>
+                </div>
+
                 <div class="md:col-span-12 flex flex-col md:flex-row items-center justify-between gap-4 mt-4 border-t border-slate-100 pt-6">
                     <label class="flex items-center gap-3 cursor-pointer group">
                         <input type="checkbox" id="item-apoio" checked class="w-5 h-5 accent-purple-600 rounded-lg cursor-pointer transition-all">
@@ -826,6 +836,8 @@
             const code = document.getElementById('item-code').value.trim();
             const category = document.getElementById('item-category').value;
             const unit = document.getElementById('item-unit').value;
+            const purchaseMultiple = Number(document.getElementById('item-multiple').value) || 1;
+            const notes = document.getElementById('item-notes').value.trim();
             const currentStock = Number(document.getElementById('item-stock').value) || 0;
             const month1 = Number(document.getElementById('item-m1').value) || 0;
             const month2 = Number(document.getElementById('item-m2').value) || 0;
@@ -835,11 +847,11 @@
             if (!name) return;
 
             if (editingId) {
-                items = items.map(item => item.id === editingId ? { ...item, name, code, category, unit, currentStock, month1, month2, month3, exportApoio } : item);
+                items = items.map(item => item.id === editingId ? { ...item, name, code, category, unit, purchaseMultiple, notes, currentStock, month1, month2, month3, exportApoio } : item);
                 exitEditMode();
             } else {
-                items.push({ id: Date.now().toString(), code, name, category, unit, currentStock, month1, month2, month3, bought: false, exportApoio });
-                formAddItem.reset(); document.getElementById('item-stock').value = 0; selectUnit.value = 'UN'; document.getElementById('item-apoio').checked = true;
+                items.push({ id: Date.now().toString(), code, name, category, unit, purchaseMultiple, notes, currentStock, month1, month2, month3, bought: false, exportApoio });
+                formAddItem.reset(); document.getElementById('item-stock').value = 0; selectUnit.value = 'UN'; document.getElementById('item-multiple').value = 1; document.getElementById('item-apoio').checked = true;
             }
             saveData(); render();
         });
@@ -933,14 +945,16 @@
             editingId = id; document.getElementById('item-name').value = item.name; document.getElementById('item-code').value = item.code || '';
             document.getElementById('item-category').value = categories.includes(item.category) ? item.category : categories[0];
             document.getElementById('item-unit').value = item.unit || 'UN';
+            document.getElementById('item-multiple').value = item.purchaseMultiple || 1;
+            document.getElementById('item-notes').value = item.notes || '';
             document.getElementById('item-stock').value = item.currentStock; document.getElementById('item-m1').value = item.month1; document.getElementById('item-m2').value = item.month2; document.getElementById('item-m3').value = item.month3;
-            document.getElementById('item-apoio').checked = item.exportApoio !== false; // O padrão é sempre Sim (true)
+            document.getElementById('item-apoio').checked = item.exportApoio !== false; 
             formTitle.innerHTML = '<div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center"><i class="ph-bold ph-pencil"></i></div> Editar Produto';
             btnSubmitForm.innerHTML = '<i class="ph-bold ph-check"></i> Salvar Alterações'; btnCancelEdit.classList.remove('hidden'); document.getElementById('item-name').focus(); window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function exitEditMode() {
-            editingId = null; formAddItem.reset(); document.getElementById('item-stock').value = 0; selectUnit.value = 'UN'; document.getElementById('item-apoio').checked = true;
+            editingId = null; formAddItem.reset(); document.getElementById('item-stock').value = 0; selectUnit.value = 'UN'; document.getElementById('item-multiple').value = 1; document.getElementById('item-apoio').checked = true;
             formTitle.innerHTML = '<div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center"><i class="ph-bold ph-plus"></i></div> Adicionar Novo Produto';
             btnSubmitForm.innerHTML = '<i class="ph-bold ph-check"></i> Registar Produto'; btnCancelEdit.classList.add('hidden');
         }
@@ -953,7 +967,14 @@
                 const totalConsumo = item.month1 + item.month2 + item.month3;
                 const mediaMensal = Math.round(totalConsumo / 3);
                 const necessidadeComMargem = Math.ceil(mediaMensal * (1 + (safetyMargin / 100)));
-                const sugestaoCalculada = Math.max(0, necessidadeComMargem - item.currentStock);
+                
+                let sugestaoCalculada = Math.max(0, necessidadeComMargem - item.currentStock);
+                
+                // Lógica de Múltiplos de Compra (Caixa Fechada)
+                const multiple = item.purchaseMultiple || 1;
+                if (sugestaoCalculada > 0 && multiple > 1) {
+                    sugestaoCalculada = Math.ceil(sugestaoCalculada / multiple) * multiple;
+                }
                 
                 // Aplica o ajuste manual do usuário, caso tenha digitado outro valor
                 const sugestaoCompra = item.manualSuggestion !== undefined ? item.manualSuggestion : sugestaoCalculada;
@@ -1057,9 +1078,10 @@
                         <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Média</div>
                     </td>
                     <td class="p-5 text-center bg-indigo-50/30 relative">
-                        ${item.manualSuggestion !== undefined ? `<div class="absolute top-2 right-2 w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center cursor-help" title="Modificado manualmente. Cálculo automático: ${Math.max(0, item.necessidadeTotal - item.currentStock)}"><i class="ph-fill ph-push-pin text-orange-500 text-[10px]"></i></div>` : ''}
-                        <input type="number" data-id="${item.id}" class="input-sugestao w-full max-w-[5rem] bg-transparent text-center text-3xl md:text-4xl font-black ${item.sugestaoCompra > 0 ? 'text-indigo-600' : 'text-slate-300'} border-b-2 border-transparent hover:border-indigo-200 focus:border-indigo-500 outline-none transition-colors" value="${item.sugestaoCompra}" min="0">
+                        ${item.manualSuggestion !== undefined ? `<div class="absolute top-2 right-2 w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center cursor-help" title="Modificado manualmente"><i class="ph-fill ph-push-pin text-orange-500 text-[10px]"></i></div>` : ''}
+                        <input type="number" data-id="${item.id}" class="input-sugestao w-full max-w-[5rem] bg-transparent text-center text-3xl md:text-4xl font-black ${item.sugestaoCompra > 0 ? 'text-indigo-600' : 'text-slate-300'} border-b-2 border-transparent hover:border-indigo-200 focus:border-indigo-500 outline-none transition-colors" value="${item.sugestaoCompra}" min="0" step="${item.purchaseMultiple || 1}">
                         <span class="block text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">${uom}</span>
+                        ${(item.purchaseMultiple || 1) > 1 ? `<span class="block text-[9px] text-indigo-500/70 font-bold mt-1 bg-indigo-100/50 rounded px-1 py-0.5 inline-block">Múltiplos de ${item.purchaseMultiple}</span>` : ''}
                     </td>
                     <td class="p-5 text-right no-print last:rounded-r-2xl min-w-[160px]">
                         <div class="flex justify-end gap-1 opacity-20 group-hover:opacity-100 transition-opacity">
