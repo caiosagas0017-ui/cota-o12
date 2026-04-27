@@ -1,1375 +1,1062 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Compras & Cotações</title>
+    <title>Sistema de Compras Mensais</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- React & ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
-    <!-- Babel para JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-        body { font-family: 'Inter', sans-serif; }
-
-        /* Animação suave */
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f3f4f6; /* slate-100 */
+        }
+        /* Animação suave para as configurações */
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .animate-fade-in {
-            animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
-        
-        /* Scrollbar personalizada */
-        .custom-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-        /* Apenas esconde elementos com a classe no-print durante impressão normal do navegador, 
-           caso alguém tente imprimir a tela principal */
-        @media print {
-            .no-print { display: none !important; }
+        /* Estilos modernos para a tabela flutuante */
+        .table-spacing {
+            border-spacing: 0 10px;
+            border-collapse: separate;
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans selection:bg-blue-100 selection:text-blue-900 overflow-hidden">
+<body class="min-h-screen text-slate-800 antialiased pb-12">
 
-    <div id="root"></div>
-
-    <script type="text/babel">
-        const { useState, useMemo, useEffect, useCallback, useRef } = React;
-
-        // --- Ícones Modernos ---
-        const Icons = {
-            Menu: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>,
-            Plus: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
-            Trash2: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>,
-            Save: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
-            Check: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
-            ArrowLeft: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>,
-            ShoppingCart: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>,
-            Trophy: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>,
-            Store: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/></svg>,
-            Package: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16.5 9.4-9-5.19"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" x2="12" y1="22.08" y2="12"/></svg>,
-            Calculator: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>,
-            ChevronRight: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
-            FileText: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>,
-            LayoutDashboard: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>,
-            Printer: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>,
-            Pencil: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>,
-            TrendingUp: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
-            Lightbulb: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>,
-            Split: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/></svg>,
-            CloudCheck: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="m8 15 3 3 6-6"/></svg>,
-            Settings: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.35a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
-            Download: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>,
-            Upload: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>,
-            AlertTriangle: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>,
-            Clock: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-            Lock: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        };
-
-        // --- Função para Gerar Janela de Impressão (Layout Moderno) ---
-        const openPrintWindow = (quote, calculations, summaryStats) => {
-            const printWindow = window.open('', '_blank');
-            if (!printWindow) {
-                alert('Pop-up bloqueado. Por favor, permita pop-ups para imprimir.');
-                return;
-            }
-
-            const { totalsPerSupplier, winnerId, bestMixTotal } = calculations;
-            
-            // Lógica de Ordenação das Colunas (Vencedor primeiro, depois ordem crescente, sem preço por último)
-            const sortedSuppliers = quote.suppliers.map(s => ({
-                id: s.id, 
-                name: s.name, 
-                total: totalsPerSupplier[s.id] || 0
-            })).sort((a, b) => {
-                if (a.total > 0 && b.total === 0) return -1; // Com preço vem antes
-                if (a.total === 0 && b.total > 0) return 1;  // Sem preço vai pro fim
-                if (a.total === 0 && b.total === 0) return 0; // Ambos sem preço
-                return a.total - b.total; // Menor preço vence
-            });
-
-            const winner = sortedSuppliers.find(s => s.total > 0);
-
-            const htmlContent = `
-                <!DOCTYPE html>
-                <html lang="pt-BR">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Relatório de Cotação - ${quote.title}</title>
-                    <script src="https://cdn.tailwindcss.com"><\/script>
-                    <style>
-                        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-                        body { font-family: 'Inter', sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                        @media print {
-                            @page { margin: 10mm; size: A4; }
-                            .no-print { display: none !important; }
-                            /* Força background na impressão */
-                            .print-bg-force { box-shadow: inset 0 0 0 1000px #cbd5e1 !important; } /* slate-300 */
-                            .print-bg-header { box-shadow: inset 0 0 0 1000px #f1f5f9 !important; } /* slate-100 */
-                        }
-                    </style>
-                </head>
-                <body class="bg-white text-slate-900 p-8 max-w-[210mm] mx-auto">
-                    
-                    <!-- Cabeçalho -->
-                    <div class="border-b-2 border-slate-800 pb-6 mb-8 flex justify-between items-end">
-                        <div>
-                            <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Relatório Técnico de Compras</h2>
-                            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight leading-tight uppercase">${quote.title || "Sem Título"}</h1>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-sm font-bold text-slate-800">Cotação #${quote.id}</div>
-                            <div class="text-xs text-slate-500">${new Date().toLocaleDateString('pt-BR')}</div>
-                        </div>
-                    </div>
-
-                    <!-- Ranking Top 3 (Agora baseado na ordem correta) -->
-                    <div class="mb-10">
-                        <h3 class="text-sm font-bold text-slate-900 border-l-4 border-slate-800 pl-3 mb-4 uppercase tracking-wide">
-                            Ranking de Fornecedores (Top 3)
-                        </h3>
-                        <div class="overflow-hidden border border-slate-300 rounded-lg">
-                            <table class="w-full text-sm">
-                                <thead class="bg-slate-100 border-b border-slate-300 text-slate-600 font-bold uppercase text-xs print-bg-header">
-                                    <tr>
-                                        <th class="py-3 px-4 text-left w-16">Pos.</th>
-                                        <th class="py-3 px-4 text-left">Fornecedor</th>
-                                        <th class="py-3 px-4 text-right">Total</th>
-                                        <th class="py-3 px-4 text-right">Diferença</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-200">
-                                    ${sortedSuppliers.filter(s => s.total > 0).slice(0, 3).map((s, idx) => {
-                                        const diff = winner ? s.total - winner.total : 0;
-                                        const isWinner = idx === 0;
-                                        return `
-                                            <tr class="${isWinner ? 'bg-slate-50 font-bold' : ''}">
-                                                <td class="py-3 px-4">
-                                                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full ${isWinner ? 'bg-slate-800 text-white' : 'bg-slate-200 text-slate-600'} text-xs">
-                                                        ${idx + 1}º
-                                                    </span>
-                                                </td>
-                                                <td class="py-3 px-4 text-slate-800">${s.name} ${isWinner ? '(Vencedor)' : ''}</td>
-                                                <td class="py-3 px-4 text-right">R$ ${s.total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                                                <td class="py-3 px-4 text-right text-slate-500">
-                                                    ${idx === 0 ? '-' : `+ R$ ${diff.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`}
-                                                </td>
-                                            </tr>
-                                        `;
-                                    }).join('')}
-                                     ${sortedSuppliers.filter(s => s.total > 0).length === 0 ? '<tr><td colspan="4" class="p-4 text-center text-slate-500">Nenhum fornecedor cotado.</td></tr>' : ''}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    ${summaryStats.mixSavings > 0 ? `
-                        <div class="mb-10 border border-slate-300 border-dashed rounded-lg p-4 break-inside-avoid">
-                            <h3 class="text-slate-800 font-bold text-xs uppercase tracking-wider mb-2">Análise de Economia Fracionada</h3>
-                            <p class="text-slate-700 text-sm leading-relaxed">
-                                A compra fracionada (item a item no menor preço) resultaria em um total de <strong>R$ ${bestMixTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong>.
-                                <br>Economia potencial de <strong>R$ ${summaryStats.mixSavings.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong> em relação ao 1º colocado.
-                            </p>
-                        </div>
-                    ` : ''}
-
-                    <!-- Tabela de Itens Detalhada (Colunas Reordenadas) -->
-                    <div class="mb-10">
-                        <h3 class="text-sm font-bold text-slate-900 border-l-4 border-slate-800 pl-3 mb-4 uppercase tracking-wide">
-                            Comparativo Item a Item
-                        </h3>
-                        <table class="w-full text-xs border-collapse border border-slate-300">
-                            <thead>
-                                <tr class="bg-slate-100 text-slate-700 uppercase tracking-wider text-left border-b border-slate-300 print-bg-header">
-                                    <th class="py-2 px-2 border-r border-slate-300 font-bold w-1/3">Item</th>
-                                    <th class="py-2 px-2 border-r border-slate-300 text-center font-bold w-16">Qtd.</th>
-                                    ${sortedSuppliers.map(s => `
-                                        <th class="py-2 px-2 border-r border-slate-300 text-right font-bold ${s.id === winnerId ? 'bg-slate-200 print-bg-force' : ''}">${s.name}</th>
-                                    `).join('')}
-                                </tr>
-                            </thead>
-                            <tbody class="text-slate-800">
-                                ${quote.items.map((item, idx) => {
-                                    const rowPrices = sortedSuppliers.map(s => parseFloat(quote.prices[`${item.id}_${s.id}`]) || 0).filter(p => p > 0);
-                                    const minRowPrice = rowPrices.length > 0 ? Math.min(...rowPrices) : null;
-                                    
-                                    return `
-                                    <tr class="border-b border-slate-200 ${idx % 2 !== 0 ? 'bg-slate-50' : ''}">
-                                        <td class="py-2 px-2 border-r border-slate-200 font-medium">${item.name}</td>
-                                        <td class="py-2 px-2 border-r border-slate-200 text-center">${item.qty} ${item.unit}</td>
-                                        ${sortedSuppliers.map(s => {
-                                            const price = parseFloat(quote.prices[`${item.id}_${s.id}`]) || 0;
-                                            const isBest = minRowPrice !== null && price === minRowPrice;
-                                            const isWinnerCol = s.id === winnerId;
-                                            const key = `${item.id}_${s.id}`;
-                                            const qty = quote.quantities?.[key] !== undefined ? parseFloat(quote.quantities[key]) : item.qty;
-                                            const qtyDiff = qty !== item.qty;
-
-                                            // Estilo para destacar o menor preço (Otimizado para P&B)
-                                            let cellStyle = "text-right px-2 border-r border-slate-200 ";
-                                            if (isBest) {
-                                                cellStyle += "bg-slate-300 font-extrabold border border-slate-400 print-bg-force"; 
-                                            } else if (isWinnerCol) {
-                                                cellStyle += "bg-slate-100";
-                                            }
-
-                                            return `
-                                                <td class="${cellStyle} py-2">
-                                                    <div>${price ? `R$ ${price.toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : '-'}</div>
-                                                    ${qtyDiff ? `<div class="text-[9px] font-bold">(${qty} ${item.unit})</div>` : ''}
-                                                </td>
-                                            `;
-                                        }).join('')}
-                                    </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                            <tfoot class="font-bold text-slate-900 bg-slate-100 border-t-2 border-slate-800 print-bg-header">
-                                <tr>
-                                    <td colspan="2" class="py-3 px-2 text-right border-r border-slate-300 uppercase tracking-wider">Total:</td>
-                                    ${sortedSuppliers.map(s => `
-                                        <td class="py-3 px-2 text-right border-r border-slate-300 ${s.id === winnerId ? 'bg-slate-300 print-bg-force' : ''}">
-                                            R$ ${s.total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-                                        </td>
-                                    `).join('')}
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-
-                    ${quote.observation ? `
-                        <div class="mb-8 p-4 bg-slate-50 border-l-4 border-blue-500 rounded-r-lg print-bg-header">
-                            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Observações</h3>
-                            <p class="text-sm text-slate-700">${quote.observation}</p>
-                        </div>
-                    ` : ''}
-
-                    <!-- Rodapé Simples -->
-                    <div class="fixed bottom-0 left-0 w-full text-center py-4 bg-white border-t border-slate-200">
-                        <p class="text-[10px] text-slate-500 uppercase">Sistema de Compras v1.0 &bull; Relatório Gerado Automaticamente</p>
-                    </div>
-
-                    <script>
-                        setTimeout(() => { window.print(); }, 500);
-                    <\/script>
-                </body>
-                </html>
-            `;
-
-            printWindow.document.write(htmlContent);
-            printWindow.document.close();
-        };
-
-        // --- Tela de Login ---
-        function LoginScreen({ onLogin }) {
-            const [pass, setPass] = useState('');
-            const [err, setErr] = useState('');
-
-            const handleLogin = (e) => {
-                e.preventDefault();
-                if(pass === '285') {
-                    onLogin();
-                } else {
-                    setErr('Senha incorreta. Tente novamente.');
-                    setPass('');
-                }
-            }
-
-            return (
-                <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-                    <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center">
-                        <div className="bg-blue-600 text-white p-4 rounded-2xl inline-flex mb-6 shadow-lg shadow-blue-200">
-                            <Icons.Lock className="h-10 w-10" />
-                        </div>
-                        <h1 className="text-2xl font-bold text-slate-800 mb-2">Acesso Restrito</h1>
-                        <p className="text-slate-400 text-sm mb-8">Digite sua credencial para continuar</p>
-                        
-                        <form onSubmit={handleLogin} className="space-y-4">
-                            <div className="relative">
-                                <input 
-                                    type="password" 
-                                    value={pass}
-                                    onChange={e => {setPass(e.target.value); setErr('')}}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-center text-lg font-bold tracking-widest focus:ring-2 focus:ring-blue-500 outline-none transition"
-                                    placeholder="••••"
-                                    maxLength={10}
-                                    autoFocus
-                                />
-                            </div>
-                            {err && <div className="text-red-500 text-xs font-bold animate-pulse">{err}</div>}
-                            <button type="submit" className="w-full bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl font-bold transition flex items-center justify-center">
-                                Entrar no Sistema <Icons.ChevronRight className="ml-2 h-4 w-4" />
-                            </button>
-                        </form>
-                    </div>
+    <!-- App Principal -->
+    <div id="main-app" class="max-w-7xl mx-auto space-y-8 px-4 md:px-8">
+        
+        <!-- Cabeçalho Flutuante (Glassmorphism) -->
+        <header id="main-header" class="sticky top-4 z-40 flex flex-col xl:flex-row justify-between items-start xl:items-center bg-white/80 backdrop-blur-md p-4 md:px-6 md:py-4 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white no-print mt-4 transition-all">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200">
+                    <i class="ph-fill ph-package text-white text-2xl"></i>
                 </div>
-            )
-        }
+                <div>
+                    <h1 class="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight">Gestão de Estoque</h1>
+                    <p class="text-sm text-slate-500 font-medium">Controlo inteligente de compras mensais</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap gap-2 mt-4 xl:mt-0 w-full xl:w-auto">
+                <button id="btn-export-csv" class="flex-1 xl:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl transition-all font-semibold text-sm border border-emerald-100 hover:border-emerald-200" title="Exportar para Excel (CSV)">
+                    <i class="ph-bold ph-file-csv text-lg"></i> Excel
+                </button>
+                <button id="btn-export-apoio" class="flex-1 xl:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-xl transition-all font-semibold text-sm border border-purple-100 hover:border-purple-200" title="Exportar formato Sistema Apoio">
+                    <i class="ph-bold ph-upload-simple text-lg"></i> Apoio
+                </button>
+                <button id="btn-print" class="flex-1 xl:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl transition-all font-semibold text-sm border border-indigo-100 hover:border-indigo-200">
+                    <i class="ph-bold ph-printer text-lg"></i> Imprimir
+                </button>
+                <button id="btn-toggle-settings" class="flex items-center justify-center p-2.5 bg-white hover:bg-slate-50 text-slate-700 rounded-xl transition-all font-semibold text-sm border border-slate-200 shadow-sm" title="Avançado">
+                    <i class="ph-bold ph-sliders text-xl"></i>
+                </button>
+            </div>
+        </header>
 
-        // --- Componente Sidebar ---
-        function Sidebar({ view, setView, isExpanded, toggle }) {
-            const menuItems = [
-                { id: 'dashboard', label: 'Dashboard', icon: Icons.LayoutDashboard },
-                { id: 'list', label: 'Minhas Cotações', icon: Icons.FileText },
-                { id: 'settings', label: 'Configurações', icon: Icons.Settings },
-            ];
+        <!-- Painel de Configurações Avançadas -->
+        <div id="settings-panel" class="hidden bg-slate-900 text-white p-6 md:p-8 rounded-[2rem] shadow-2xl fade-in relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
+            
+            <h3 class="font-bold text-xl mb-6 flex items-center gap-3 relative z-10">
+                <i class="ph-fill ph-sliders text-indigo-400"></i> Configurações do Sistema
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+                <!-- Margem de Segurança -->
+                <div class="bg-white/10 p-5 rounded-2xl border border-white/10 backdrop-blur-sm">
+                    <label class="block text-sm font-bold text-indigo-200 mb-2">Margem de Segurança (%)</label>
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="number" id="input-safety-margin" min="0" max="100" class="w-full p-2.5 bg-black/20 border border-white/10 rounded-xl focus:ring-2 focus:ring-indigo-400 text-white font-bold outline-none"/>
+                    </div>
+                    <p class="text-xs text-slate-400">Gordura extra para evitar ruptura de estoque.</p>
+                </div>
 
-            return (
-                <aside className={`bg-white border-r border-slate-200 h-screen sticky top-0 transition-all duration-300 flex flex-col z-40 no-print ${isExpanded ? 'w-64' : 'w-20'}`}>
-                    <div className="p-4 flex items-center justify-between h-20 border-b border-slate-100">
-                        <div className={`flex items-center gap-3 overflow-hidden transition-all duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0'}`}>
-                            <div className="bg-blue-600 text-white p-1.5 rounded-lg shrink-0">
-                                <Icons.Calculator className="h-6 w-6" />
-                            </div>
-                            <div className="whitespace-nowrap">
-                                <h1 className="font-bold text-slate-800 text-sm">Sistema de</h1>
-                                <h1 className="font-bold text-slate-800 text-sm">Compras</h1>
-                            </div>
-                        </div>
-                        <button onClick={toggle} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition mx-auto" title={isExpanded ? "Recolher Menu" : "Expandir Menu"}>
-                            <Icons.Menu className="h-6 w-6" />
+                <!-- Backup e Restauro -->
+                <div class="bg-white/10 p-5 rounded-2xl border border-white/10 backdrop-blur-sm">
+                    <label class="block text-sm font-bold text-indigo-200 mb-2">Backup de Dados</label>
+                    <div class="flex gap-2 mb-2">
+                        <button id="btn-export" class="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-sm font-semibold transition-colors">
+                            <i class="ph-bold ph-download-simple"></i> Exportar
+                        </button>
+                        <button id="btn-import-trigger" class="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-semibold transition-colors">
+                            <i class="ph-bold ph-upload-simple"></i> Importar
+                        </button>
+                        <input type="file" id="input-import" accept=".json" class="hidden" />
+                    </div>
+                    <p class="text-xs text-slate-400">Guarde um ficheiro local ou restaure-o.</p>
+                </div>
+
+                <!-- Gestão de Ciclo -->
+                <div class="bg-white/10 p-5 rounded-2xl border border-white/10 backdrop-blur-sm">
+                    <label class="block text-sm font-bold text-indigo-200 mb-2">Gestão de Ciclo</label>
+                    <div class="flex items-center gap-2 mb-3 bg-emerald-500/20 text-emerald-300 px-3 py-1.5 rounded-lg text-xs font-bold justify-center border border-emerald-500/30">
+                        <i class="ph-bold ph-magic-wand"></i> Avanço Automático Ativo
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="btn-advance-month" class="flex-1 flex items-center justify-center gap-1 px-2 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold transition-colors">
+                            <i class="ph-bold ph-calendar-forward"></i> Forçar
+                        </button>
+                        <button id="btn-zero-stock" class="flex-1 flex items-center justify-center gap-1 px-2 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-xl text-xs font-semibold transition-colors" title="Zerar todos os estoques atuais">
+                            <i class="ph-bold ph-arrows-down"></i> Zerar Estoques
+                        </button>
+                        <button id="btn-clear-all" class="flex-1 flex items-center justify-center gap-1 px-2 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-xl text-xs font-semibold transition-colors">
+                            <i class="ph-bold ph-trash"></i> Reset Total
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
 
-                    <nav className="flex-1 p-3 space-y-2 mt-4">
-                        {menuItems.map(item => (
-                            <button
-                                key={item.id}
-                                onClick={() => setView(item.id)}
-                                className={`w-full flex items-center p-3 rounded-xl transition-all duration-200 group relative ${view === item.id ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
-                            >
-                                <item.icon className={`h-6 w-6 shrink-0 transition-colors ${view === item.id ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'} ${isExpanded ? 'mr-3' : 'mx-auto'}`} />
-                                
-                                <span className={`whitespace-nowrap transition-all duration-300 origin-left ${isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0 hidden'}`}>
-                                    {item.label}
-                                </span>
+        <!-- Abas de Navegação -->
+        <div id="tabs-container" class="flex gap-2 border-b border-slate-200 no-print px-2">
+            <button id="tab-products" class="py-3 px-6 border-b-2 border-indigo-600 text-indigo-600 font-bold transition-all text-sm tracking-wide">Produtos</button>
+            <button id="tab-categories" class="py-3 px-6 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-bold transition-all text-sm tracking-wide">Categorias</button>
+        </div>
 
-                                {!isExpanded && (
-                                    <div className="absolute left-full ml-3 px-3 py-2 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity shadow-xl">
-                                        {item.label}
-                                        <div className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-slate-800"></div>
-                                    </div>
-                                )}
-                            </button>
-                        ))}
-                    </nav>
+        <!-- View Produtos -->
+        <div id="view-products" class="space-y-6">
 
-                    <div className={`p-4 border-t border-slate-100 text-xs text-slate-400 text-center ${isExpanded ? 'block' : 'hidden'}`}>
-                        v1.0.4
+        <!-- Alertas Inteligentes -->
+        <div id="alert-banner" class="hidden bg-gradient-to-r from-rose-50 to-orange-50 border-l-4 border-rose-500 p-5 rounded-2xl shadow-sm items-center gap-4 fade-in">
+            <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
+                <i class="ph-fill ph-warning-circle text-rose-500 text-2xl"></i>
+            </div>
+            <div>
+                <h4 class="text-rose-900 font-extrabold text-sm uppercase tracking-wider mb-0.5">Risco de Ruptura Detectado</h4>
+                <p id="alert-banner-text" class="text-sm text-rose-700 font-medium">Produtos prestes a esgotar nos próximos dias.</p>
+            </div>
+        </div>
+
+        <!-- Cards de Resumo Modernos -->
+        <div id="summary-cards" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="relative overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-[2rem] shadow-lg shadow-slate-200 text-white flex items-center gap-5">
+                <i class="ph-fill ph-circles-four absolute -right-6 -bottom-6 text-9xl text-white/5"></i>
+                <div class="p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 z-10">
+                    <i class="ph-bold ph-package text-2xl text-indigo-300"></i>
+                </div>
+                <div class="z-10">
+                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">Total de Produtos</p>
+                    <p id="summary-total" class="text-4xl font-black tracking-tight">0</p>
+                </div>
+            </div>
+            <div class="relative overflow-hidden bg-gradient-to-br from-indigo-500 to-blue-600 p-6 rounded-[2rem] shadow-lg shadow-indigo-200 text-white flex items-center gap-5">
+                <i class="ph-fill ph-shopping-cart absolute -right-6 -bottom-6 text-9xl text-white/10"></i>
+                <div class="p-4 bg-white/20 backdrop-blur-md rounded-2xl border border-white/20 z-10">
+                    <i class="ph-bold ph-shopping-bag text-2xl text-white"></i>
+                </div>
+                <div class="z-10">
+                    <p class="text-xs text-indigo-100 font-bold uppercase tracking-widest mb-1">Itens para Comprar</p>
+                    <p id="summary-buy" class="text-4xl font-black tracking-tight">0</p>
+                </div>
+            </div>
+            <div class="relative overflow-hidden bg-gradient-to-br from-rose-500 to-orange-500 p-6 rounded-[2rem] shadow-lg shadow-rose-200 text-white flex items-center gap-5">
+                <i class="ph-fill ph-warning absolute -right-6 -bottom-6 text-9xl text-white/10"></i>
+                <div class="p-4 bg-white/20 backdrop-blur-md rounded-2xl border border-white/20 z-10">
+                    <i class="ph-bold ph-fire text-2xl text-white"></i>
+                </div>
+                <div class="z-10">
+                    <p class="text-xs text-rose-100 font-bold uppercase tracking-widest mb-1">Estoque Crítico</p>
+                    <p id="summary-critical" class="text-4xl font-black tracking-tight">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulário Moderno -->
+        <div id="add-form-container" class="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-100 no-print">
+            <h2 id="form-title" class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3">
+                <div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
+                    <i class="ph-bold ph-plus"></i>
+                </div>
+                Adicionar Novo Produto
+            </h2>
+            <form id="form-add-item" class="grid grid-cols-1 md:grid-cols-12 gap-5 items-end">
+                <div class="md:col-span-3">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Nome do Produto</label>
+                    <input required type="text" id="item-name" placeholder="Ex: Café em pó 500g" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-medium"/>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1" title="Código idêntico ao do banco de dados Apoio">Código Apoio</label>
+                    <input type="text" id="item-code" placeholder="Ex: 12345" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-medium"/>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Categoria</label>
+                    <select id="item-category" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-medium appearance-none">
+                        <!-- Opções geradas via JavaScript -->
+                    </select>
+                </div>
+                <div class="md:col-span-1">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 text-center">Unid.</label>
+                    <select id="item-unit" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-bold text-slate-600 appearance-none text-center">
+                        <option value="UN">UN</option>
+                        <option value="KG">KG</option>
+                        <option value="L">L</option>
+                        <option value="CX">CX</option>
+                        <option value="PC">PC</option>
+                        <option value="PT">PT</option>
+                        <option value="BL">BL</option>
+                        <option value="RL">RL</option>
+                    </select>
+                </div>
+                <div class="md:col-span-1">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 text-center">Estoque</label>
+                    <input required type="number" id="item-stock" min="0" value="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-center font-black text-slate-700"/>
+                </div>
+                <div class="md:col-span-3 grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center" title="Consumo no Mês -1">M-1</label>
+                        <input required type="number" id="item-m1" min="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
                     </div>
-                </aside>
-            );
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center" title="Consumo no Mês -2">M-2</label>
+                        <input required type="number" id="item-m2" min="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center" title="Consumo no Mês -3">M-3</label>
+                        <input required type="number" id="item-m3" min="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
+                    </div>
+                </div>
+                <div class="md:col-span-12 flex justify-end gap-3 mt-4 border-t border-slate-100 pt-6">
+                    <button type="button" id="btn-cancel-edit" class="hidden bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-2xl font-bold transition-all">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="btn-submit-form" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-2xl font-bold transition-all flex items-center gap-2 shadow-lg shadow-indigo-200 hover:shadow-indigo-300">
+                        <i class="ph-bold ph-check"></i>
+                        Registar Produto
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tabela de Produtos (Estilo Lista Flutuante) -->
+        <div class="space-y-4">
+            <div class="view-actions flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 no-print bg-white p-4 rounded-3xl shadow-sm border border-slate-100">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+                        <i class="ph-bold ph-list-numbers text-emerald-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-800">Lista de Planeamento</h2>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+                    <button id="btn-clear-cart" class="flex items-center justify-center px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors font-bold text-sm" title="Desmarcar carrinho">
+                        <i class="ph-bold ph-shopping-cart text-lg"></i>
+                    </button>
+                    
+                    <select id="select-filter" class="w-full sm:w-auto px-4 py-2.5 bg-indigo-50 border border-transparent rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-indigo-700 font-bold cursor-pointer">
+                        <option value="all">Ver Todos</option>
+                        <option value="buy">Em Falta (Comprar)</option>
+                        <option value="critical">Risco Crítico</option>
+                        <option value="ok">Estoque Saudável</option>
+                    </select>
+
+                    <select id="select-sort" class="w-full sm:w-auto px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 font-bold cursor-pointer">
+                        <option value="priority">Ord: Prioridade</option>
+                        <option value="name">Ord: A-Z</option>
+                        <option value="category">Ord: Categoria</option>
+                        <option value="stock">Ord: Menor Estoque</option>
+                    </select>
+
+                    <div class="relative w-full sm:w-64 flex-grow">
+                        <i class="ph-bold ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="input-search" placeholder="Procurar (Nome ou Código)..." class="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm font-medium">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto pb-8">
+                <!-- Alterado para Tabela Moderna com Border-Spacing -->
+                <table class="w-full text-left table-spacing">
+                    <thead>
+                        <tr>
+                            <th class="px-5 py-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest text-center no-print">Chk</th>
+                            <th class="px-5 py-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Produto</th>
+                            <th class="px-5 py-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest text-center">Saúde do Estoque</th>
+                            <th class="px-5 py-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest text-center">Média/Mês</th>
+                            <th class="px-5 py-2 text-[10px] font-extrabold text-indigo-500 uppercase tracking-widest text-center bg-indigo-50/50 rounded-t-xl" id="th-necessidade">Sugerido</th>
+                            <th class="px-5 py-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest text-right no-print">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Itens renderizados via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        </div> <!-- Fecho da View Produtos -->
+
+        <!-- View Categorias -->
+        <div id="view-categories" class="hidden space-y-6">
+            <div class="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-100 no-print">
+                <h2 id="title-category-form" class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3">
+                    <div class="w-8 h-8 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center">
+                        <i class="ph-bold ph-tag"></i>
+                    </div>
+                    Gestão de Categorias
+                </h2>
+                <form id="form-add-category" class="flex flex-col md:flex-row gap-4 items-end mb-8 border-b border-slate-100 pb-8">
+                    <div class="flex-1 w-full">
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Nome da Nova Categoria</label>
+                        <input required type="text" id="input-new-category" placeholder="Ex: Congelados Especiais" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition-all font-medium"/>
+                    </div>
+                    <button type="button" id="btn-cancel-category" class="hidden w-full md:w-auto bg-slate-100 hover:bg-slate-200 text-slate-700 px-8 py-3.5 rounded-2xl font-bold transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="btn-submit-category" class="w-full md:w-auto bg-purple-600 hover:bg-purple-700 text-white px-8 py-3.5 rounded-2xl font-bold transition-all shadow-lg shadow-purple-200 flex items-center justify-center gap-2">
+                        <i class="ph-bold ph-plus"></i> Guardar
+                    </button>
+                </form>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="grid-categories">
+                    <!-- Categorias renderizadas via JS como Cartões em vez de Tabela -->
+                </div>
+            </div>
+        </div> <!-- Fecho da View Categorias -->
+
+    </div> <!-- Fecho do App Principal -->
+
+    <!-- Modal Customizado UI (Mantido e Estilizado) -->
+    <div id="custom-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 backdrop-blur-sm px-4 no-print transition-all">
+        <div class="bg-white rounded-[2rem] shadow-2xl max-w-sm w-full p-8 fade-in border border-slate-100">
+            <h3 class="text-xl font-black text-slate-800 mb-3 flex items-center gap-3" id="modal-title">Confirmação</h3>
+            <p class="text-slate-500 font-medium mb-8 leading-relaxed" id="modal-message">Tem certeza?</p>
+            <div class="flex justify-end gap-3">
+                <button id="btn-modal-cancel" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-colors">Cancelar</button>
+                <button id="btn-modal-confirm" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold transition-colors shadow-lg shadow-rose-200">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Exportação Apoio -->
+    <div id="modal-export-apoio" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 backdrop-blur-sm px-4 no-print transition-all">
+        <div class="bg-white rounded-[2rem] shadow-2xl max-w-sm w-full p-8 fade-in border border-slate-100">
+            <h3 class="text-xl font-black text-slate-800 mb-3 flex items-center gap-3">
+                <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+                    <i class="ph-bold ph-upload-simple text-xl"></i>
+                </div>
+                Exportar Apoio
+            </h3>
+            <p class="text-slate-500 font-medium mb-6">Filtre a categoria que deseja incluir no arquivo de exportação para o sistema Apoio:</p>
+            <select id="export-apoio-category" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition-all font-bold text-slate-700 mb-8 appearance-none cursor-pointer">
+                <!-- Opções geradas via JS -->
+            </select>
+            <div class="flex justify-end gap-3">
+                <button id="btn-export-apoio-cancel" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-colors">Cancelar</button>
+                <button id="btn-export-apoio-confirm" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold transition-colors shadow-lg shadow-purple-200 flex items-center gap-2">
+                    <i class="ph-bold ph-download-simple"></i> Gerar Arquivo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- ESTADO DA APLICAÇÃO ---
+        const defaultCategories = ['Gêneros Alimentícios', 'Descartáveis e Limpeza', 'EPI - Luvas', 'Materiais de Escritório', 'Materiais Gráficos'];
+
+        const defaultItems = [
+            // Gêneros Alimentícios
+            { id: '1', code: '', name: 'Açúcar Sachet', category: 'Gêneros Alimentícios', unit: 'CX', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '2', code: '', name: 'Açúcar União refinado', category: 'Gêneros Alimentícios', unit: 'KG', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '3', code: '', name: 'Chá Matt', category: 'Gêneros Alimentícios', unit: 'UN', currentStock: 0, month1: 10, month2: 10, month3: 10, bought: false },
+            { id: '4', code: '', name: 'Leite Semi Desnatado', category: 'Gêneros Alimentícios', unit: 'CX', currentStock: 0, month1: 144, month2: 144, month3: 144, bought: false },
+            { id: '5', code: '', name: 'Pó de Café', category: 'Gêneros Alimentícios', unit: 'UN', currentStock: 0, month1: 20, month2: 20, month3: 20, bought: false },
+            { id: '6', code: '', name: 'Refresco Tang', category: 'Gêneros Alimentícios', unit: 'UN', currentStock: 0, month1: 100, month2: 100, month3: 100, bought: false },
+            { id: '7', code: '', name: 'Adoçante Zero Cal 100 Ml', category: 'Gêneros Alimentícios', unit: 'UN', currentStock: 0, month1: 5, month2: 5, month3: 5, bought: false },
+            { id: '8', code: '', name: 'Filtro de café n°103', category: 'Gêneros Alimentícios', unit: 'CX', currentStock: 0, month1: 12, month2: 12, month3: 12, bought: false },
+
+            // Descartáveis e Limpeza
+            { id: '9', code: '', name: 'Copo Descartáveis 180 Ml', category: 'Descartáveis e Limpeza', unit: 'CX', currentStock: 0, month1: 100, month2: 100, month3: 100, bought: false },
+            { id: '10', code: '', name: 'Copo Descartáveis 50 Ml', category: 'Descartáveis e Limpeza', unit: 'CX', currentStock: 0, month1: 50, month2: 50, month3: 50, bought: false },
+            { id: '11', code: '', name: 'Mexedor para Café 500 Un', category: 'Descartáveis e Limpeza', unit: 'PT', currentStock: 0, month1: 8, month2: 8, month3: 8, bought: false },
+            { id: '12', code: '', name: 'Esponja Scoth Brite', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 20, month2: 20, month3: 20, bought: false },
+            { id: '13', code: '', name: 'Pano de Chão saco Alvejado', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 20, month2: 20, month3: 20, bought: false },
+            { id: '14', code: '', name: 'Pano Perfex rolo c/ 25', category: 'Descartáveis e Limpeza', unit: 'RL', currentStock: 0, month1: 10, month2: 10, month3: 10, bought: false },
+            { id: '15', code: '', name: 'Papel Higiênico 4 Rolos', category: 'Descartáveis e Limpeza', unit: 'PT', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '16', code: '', name: 'Papel Higiênico 300Mt', category: 'Descartáveis e Limpeza', unit: 'RL', currentStock: 0, month1: 5, month2: 5, month3: 5, bought: false },
+            { id: '17', code: '', name: 'Papel Interfolha c/1000', category: 'Descartáveis e Limpeza', unit: 'CX', currentStock: 0, month1: 100, month2: 100, month3: 100, bought: false },
+            { id: '18', code: '', name: 'Papel Toalha Snob', category: 'Descartáveis e Limpeza', unit: 'PT', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '19', code: '', name: 'Saco de Lixo 100L', category: 'Descartáveis e Limpeza', unit: 'PT', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '20', code: '', name: 'Saco de Lixo 200L', category: 'Descartáveis e Limpeza', unit: 'PT', currentStock: 0, month1: 4, month2: 4, month3: 4, bought: false },
+            { id: '21', code: '', name: 'Saco de Lixo 20L', category: 'Descartáveis e Limpeza', unit: 'PT', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '22', code: '', name: 'Saco de Lixo 40L', category: 'Descartáveis e Limpeza', unit: 'PT', currentStock: 0, month1: 25, month2: 25, month3: 25, bought: false },
+            { id: '23', code: '', name: 'Flanela branca 38 x 58 Grande', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '24', code: '', name: 'Alcool 1 L', category: 'Descartáveis e Limpeza', unit: 'L', currentStock: 0, month1: 48, month2: 48, month3: 48, bought: false },
+            { id: '25', code: '', name: 'Alcool Gel 70% 800Ml', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 12, month2: 12, month3: 12, bought: false },
+            { id: '26', code: '', name: 'Bom Ar 500Ml', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 10, month2: 10, month3: 10, bought: false },
+            { id: '27', code: '', name: 'Oleo de Peroba', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '28', code: '', name: 'Cera Brilho fácil 750Ml', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '29', code: '', name: 'Desinfetante 2L', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 48, month2: 48, month3: 48, bought: false },
+            { id: '30', code: '', name: 'Detergente Liquido 500Ml', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '31', code: '', name: 'Limpador Destac', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 84, month2: 84, month3: 84, bought: false },
+            { id: '32', code: '', name: 'Limpador Sapolio 300Ml', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 6, month2: 6, month3: 6, bought: false },
+            { id: '33', code: '', name: 'Lustra Moveis 500Ml', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 4, month2: 4, month3: 4, bought: false },
+            { id: '34', code: '', name: 'Sabão Em Pó', category: 'Descartáveis e Limpeza', unit: 'KG', currentStock: 0, month1: 20, month2: 20, month3: 20, bought: false },
+            { id: '35', code: '', name: 'Vassoura', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '36', code: '', name: 'Filtro refil Eco IBBL SPECIAL', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '37', code: '', name: 'FLANELA', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '38', code: '', name: 'VEJA', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 5, month2: 5, month3: 5, bought: false },
+            { id: '39', code: '', name: 'RODO C/ CABO', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '40', code: '', name: 'AGUA SANITARIA', category: 'Descartáveis e Limpeza', unit: 'L', currentStock: 0, month1: 48, month2: 48, month3: 48, bought: false },
+            { id: '41', code: '', name: 'PULVERIZADOR', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '42', code: '', name: 'Removedor 1 L', category: 'Descartáveis e Limpeza', unit: 'L', currentStock: 0, month1: 6, month2: 6, month3: 6, bought: false },
+            { id: '43', code: '', name: 'Esponja Magica', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 20, month2: 20, month3: 20, bought: false },
+            { id: '44', code: '', name: 'Inseticida aerosol', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '45', code: '', name: 'Sabonete Liquido Trilha', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '46', code: '', name: 'Sabão em Pedra', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 5, month2: 5, month3: 5, bought: false },
+            { id: '47', code: '', name: 'sbp repelente aparelho', category: 'Descartáveis e Limpeza', unit: 'UN', currentStock: 0, month1: 10, month2: 10, month3: 10, bought: false },
+
+            // EPI - Luvas
+            { id: '48', code: '', name: 'Luva limpeza sanro Top M', category: 'EPI - Luvas', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+
+            // Materiais de Escritório
+            { id: '49', code: '', name: 'Agenda Diaria Espiral', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '50', code: '', name: 'Apontador c/ Lixeira', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 5, month2: 5, month3: 5, bought: false },
+            { id: '51', code: '', name: 'Bobina Senha Atendimento Papel Termico', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '52', code: '', name: 'Bobina 58x360 Papel Termawrite', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '53', code: '', name: 'Borracha Tk', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '54', code: '', name: 'Caderno 1/4 Broc c/dura 96f', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '55', code: '', name: 'Caderno 1/4 Broc. Indice A/Z', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '56', code: '', name: 'Caderno 1/4 Broc. Protocolo 96F', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '57', code: '', name: 'Caixa Arquivo Morto', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '58', code: '', name: 'Caneta Esf Azul', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '59', code: '', name: 'Caneta Esf Vermelho', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '60', code: '', name: 'Caneta Esf Pilot azul', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '61', code: '', name: 'Caneta Marca Texto Amarelo', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 36, month2: 36, month3: 36, bought: false },
+            { id: '62', code: '', name: 'Caneta Marca Texto Azul', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 36, month2: 36, month3: 36, bought: false },
+            { id: '63', code: '', name: 'Caneta P/ Quadro Branco Verm', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '64', code: '', name: 'Caneta Retroprojetor 2.0 mm Preta', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '65', code: '', name: 'Caneta Retroprojetor 2.0 mm Verm', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '66', code: '', name: 'Extrator de Grampo', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '67', code: '', name: 'Cartão Ponto Mensal', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '68', code: '', name: 'Clips N°8', category: 'Materiais de Escritório', unit: 'CX', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '69', code: '', name: 'Clips N°3', category: 'Materiais de Escritório', unit: 'CX', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '70', code: '', name: 'Clips N°4', category: 'Materiais de Escritório', unit: 'CX', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '71', code: '', name: 'Cola Tenaz', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '72', code: '', name: 'Corretivo tipo Caneta', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '73', code: '', name: 'Corretivo tipo Fita', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '74', code: '', name: 'Fita Crepe Branca', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '75', code: '', name: 'Fita Dupla Face', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '76', code: '', name: 'Fita Larga Transparente', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '77', code: '', name: 'Grampeador Medio', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '78', code: '', name: 'Papel Opline 180G', category: 'Materiais de Escritório', unit: 'PT', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '79', code: '', name: 'Papel Sulfite A4 Branco 500 fls', category: 'Materiais de Escritório', unit: 'PT', currentStock: 0, month1: 150, month2: 150, month3: 150, bought: false },
+            { id: '80', code: '', name: 'Pasta L a4', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 20, month2: 20, month3: 20, bought: false },
+            { id: '81', code: '', name: 'Pilha AAA', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '82', code: '', name: 'Pilha AA', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '83', code: '', name: 'Plastico resistente 04 Furos', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '84', code: '', name: 'Post it 100 fls', category: 'Materiais de Escritório', unit: 'PT', currentStock: 0, month1: 50, month2: 50, month3: 50, bought: false },
+            { id: '85', code: '', name: 'Regua Acrilica 30 CM', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '86', code: '', name: 'Tesoura Escolar 13 Cm', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '87', code: '', name: 'Tersoura Escolar 20 Cm', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 3, month2: 3, month3: 3, bought: false },
+            { id: '88', code: '', name: 'Caneta Esf Azul Bic 1.6 mm', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '89', code: '', name: 'Pasta A4 c/presilha Transp', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '90', code: '', name: 'Pasta Catalogo c/100 pls', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '91', code: '', name: 'Lapis preto', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '92', code: '', name: 'Grafite 2b 0.5', category: 'Materiais de Escritório', unit: 'CX', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '93', code: '', name: 'Grafite 2b', category: 'Materiais de Escritório', unit: 'CX', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '94', code: '', name: 'Lapiseira 0.5', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '95', code: '', name: 'Grafite 0.7', category: 'Materiais de Escritório', unit: 'CX', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '96', code: '', name: 'Lapiseira 0.7', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '97', code: '', name: 'Tinta p/ carimbo preto', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '98', code: '', name: 'Livro Ata 100fls', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '99', code: '', name: 'Grampo galvanizado 26/6', category: 'Materiais de Escritório', unit: 'CX', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '100', code: '', name: 'Caderno espiral 96 F', category: 'Materiais de Escritório', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+
+            // Materiais Gráficos
+            { id: '101', code: '', name: 'Receituario Camu', category: 'Materiais Gráficos', unit: 'BL', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '102', code: '', name: 'Gui de Comprovante Presencial', category: 'Materiais Gráficos', unit: 'BL', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '103', code: '', name: 'Sadt Bloco 100 Fls', category: 'Materiais Gráficos', unit: 'BL', currentStock: 0, month1: 180, month2: 180, month3: 180, bought: false },
+            { id: '104', code: '', name: 'Relatorio Terapeutico Sem endereço', category: 'Materiais Gráficos', unit: 'BL', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '105', code: '', name: 'Recibo Financeiro Sede', category: 'Materiais Gráficos', unit: 'BL', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '106', code: '', name: 'Receituario B BI 100 fls', category: 'Materiais Gráficos', unit: 'BL', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '107', code: '', name: 'Ficha Clinica Ocupacional', category: 'Materiais Gráficos', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '108', code: '', name: 'Guia de Prestadores', category: 'Materiais Gráficos', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '109', code: '', name: 'Questionario Perfil Saude', category: 'Materiais Gráficos', unit: 'UN', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '110', code: '', name: 'Recibo financeiro Evb', category: 'Materiais Gráficos', unit: 'BL', currentStock: 0, month1: 0, month2: 0, month3: 0, bought: false },
+            { id: '111', code: '', name: 'Envelope pardo 18,5x25', category: 'Materiais Gráficos', unit: 'CX', currentStock: 0, month1: 4, month2: 4, month3: 4, bought: false }
+        ];
+
+        // Atualizámos a chave do LocalStorage para 'inventory_items_v2' 
+        // para forçar o sistema a carregar a nova lista de produtos sem precisar de apagar o cache.
+        let items = JSON.parse(localStorage.getItem('inventory_items_v2')) || defaultItems;
+        let categories = JSON.parse(localStorage.getItem('inventory_categories_v2')) || defaultCategories;
+        let safetyMargin = JSON.parse(localStorage.getItem('safety_margin')) || 15;
+
+        const currentMonthId = new Date().getFullYear() + '-' + (new Date().getMonth() + 1).toString().padStart(2, '0');
+        let lastCycleMonth = localStorage.getItem('last_cycle_month');
+
+        let showSettings = false;
+        let editingId = null;
+        let editingCategoryName = null;
+        let searchTerm = '';
+        let currentSort = 'priority';
+        let currentFilter = 'all';
+
+        // --- ELEMENTOS DOM ---
+        const btnToggleSettings = document.getElementById('btn-toggle-settings');
+        const btnExportCsv = document.getElementById('btn-export-csv');
+        const btnExportApoio = document.getElementById('btn-export-apoio');
+        const btnPrint = document.getElementById('btn-print');
+        const btnClearAll = document.getElementById('btn-clear-all');
+        const btnZeroStock = document.getElementById('btn-zero-stock');
+        const btnExport = document.getElementById('btn-export');
+        const btnImportTrigger = document.getElementById('btn-import-trigger');
+        const inputImport = document.getElementById('input-import');
+        const btnAdvanceMonth = document.getElementById('btn-advance-month');
+        
+        const settingsPanel = document.getElementById('settings-panel');
+        const inputSafetyMargin = document.getElementById('input-safety-margin');
+        const inputSearch = document.getElementById('input-search');
+        const selectSort = document.getElementById('select-sort');
+        const selectFilter = document.getElementById('select-filter');
+        const btnClearCart = document.getElementById('btn-clear-cart');
+        
+        const tabProducts = document.getElementById('tab-products');
+        const tabCategories = document.getElementById('tab-categories');
+        const viewProducts = document.getElementById('view-products');
+        const viewCategories = document.getElementById('view-categories');
+
+        const formAddCategory = document.getElementById('form-add-category');
+        const inputNewCategory = document.getElementById('input-new-category');
+        const gridCategories = document.getElementById('grid-categories'); 
+        const selectCategory = document.getElementById('item-category');
+        const selectUnit = document.getElementById('item-unit');
+        const titleCategoryForm = document.getElementById('title-category-form');
+        const btnSubmitCategory = document.getElementById('btn-submit-category');
+        const btnCancelCategory = document.getElementById('btn-cancel-category');
+
+        const formAddItem = document.getElementById('form-add-item');
+        const formTitle = document.getElementById('form-title');
+        const btnSubmitForm = document.getElementById('btn-submit-form');
+        const btnCancelEdit = document.getElementById('btn-cancel-edit');
+        
+        const tableBody = document.getElementById('table-body');
+        const thNecessidade = document.getElementById('th-necessidade');
+
+        const elSummaryTotal = document.getElementById('summary-total');
+        const elSummaryBuy = document.getElementById('summary-buy');
+        const elSummaryCritical = document.getElementById('summary-critical');
+
+        const alertBanner = document.getElementById('alert-banner');
+        const alertBannerText = document.getElementById('alert-banner-text');
+
+        const customModal = document.getElementById('custom-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const btnModalCancel = document.getElementById('btn-modal-cancel');
+        const btnModalConfirm = document.getElementById('btn-modal-confirm');
+        let modalAction = null;
+
+        // Elementos Modal Apoio
+        const modalExportApoio = document.getElementById('modal-export-apoio');
+        const selectExportApoioCat = document.getElementById('export-apoio-category');
+        const btnExportApoioCancel = document.getElementById('btn-export-apoio-cancel');
+        const btnExportApoioConfirm = document.getElementById('btn-export-apoio-confirm');
+
+        // --- INICIALIZAÇÃO ---
+        if (!lastCycleMonth) {
+            localStorage.setItem('last_cycle_month', currentMonthId);
+        } else if (lastCycleMonth !== currentMonthId) {
+            items = items.map(item => ({
+                ...item, month3: item.month2, month2: item.month1, month1: 0, bought: false
+            }));
+            localStorage.setItem('last_cycle_month', currentMonthId);
+            saveData();
+            setTimeout(() => {
+                showModal(
+                    '<i class="ph-bold ph-calendar-check text-emerald-500"></i> Novo Mês Iniciado!',
+                    'O sistema detectou a viragem do mês e atualizou o seu histórico. O Mês -1 foi limpo para os novos registos.',
+                    true
+                );
+            }, 800); 
         }
 
-        // --- Componente Principal ---
-        function App() {
-            const [view, setView] = useState('dashboard');
-            const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-            const [isAuthenticated, setIsAuthenticated] = useState(false);
-            
-            // Inicializa do LocalStorage ou vazio
-            const [quotations, setQuotations] = useState(() => {
-                const saved = localStorage.getItem('sys_quotations');
-                return saved ? JSON.parse(saved) : [];
-            });
-            const [activeQuote, setActiveQuote] = useState(null);
+        inputSafetyMargin.value = safetyMargin;
+        renderCategories();
+        render();
 
-            // Efeito para salvar no LocalStorage sempre que 'quotations' mudar
-            useEffect(() => {
-                localStorage.setItem('sys_quotations', JSON.stringify(quotations));
-            }, [quotations]);
+        // --- EVENT LISTENERS ---
+        tabProducts.addEventListener('click', () => {
+            viewProducts.classList.remove('hidden');
+            viewCategories.classList.add('hidden');
+            tabProducts.classList.replace('border-transparent', 'border-indigo-600');
+            tabProducts.classList.replace('text-slate-500', 'text-indigo-600');
+            tabCategories.classList.replace('border-indigo-600', 'border-transparent');
+            tabCategories.classList.replace('text-indigo-600', 'text-slate-500');
+        });
 
-            // Efeito para "Auto-Save" e cálculos em tempo real
-            useEffect(() => {
-                if (activeQuote) {
-                    const totalsPerSupplier = {};
-                    let minTotal = Infinity;
-                    let winner = 'N/A';
-                    
-                    activeQuote.suppliers.forEach(s => {
-                        let sum = 0;
-                        activeQuote.items.forEach(i => {
-                            const key = `${i.id}_${s.id}`;
-                            const qty = activeQuote.quantities?.[key] !== undefined ? parseFloat(activeQuote.quantities[key]) : i.qty;
-                            sum += (parseFloat(activeQuote.prices[key]) || 0) * qty;
-                        });
-                        totalsPerSupplier[s.id] = sum;
-                        if (sum > 0 && sum < minTotal) {
-                            minTotal = sum;
-                            winner = s.name;
-                        }
-                    });
+        tabCategories.addEventListener('click', () => {
+            viewCategories.classList.remove('hidden');
+            viewProducts.classList.add('hidden');
+            tabCategories.classList.replace('border-transparent', 'border-indigo-600');
+            tabCategories.classList.replace('text-slate-500', 'text-indigo-600');
+            tabProducts.classList.replace('border-indigo-600', 'border-transparent');
+            tabProducts.classList.replace('text-indigo-600', 'text-slate-500');
+        });
 
-                    // Atualiza o objeto da cotação com os novos totais
-                    const updatedQuote = {
-                        ...activeQuote,
-                        total: minTotal === Infinity ? 0 : minTotal,
-                        winner: winner,
-                        status: activeQuote.suppliers.length > 0 && activeQuote.items.length > 0 ? 'Finalizada' : 'Rascunho'
-                    };
+        btnToggleSettings.addEventListener('click', () => {
+            showSettings = !showSettings;
+            if (showSettings) settingsPanel.classList.remove('hidden');
+            else settingsPanel.classList.add('hidden');
+        });
 
-                    // Atualiza a lista principal sem re-renderizar o editor inteiro (otimização básica)
-                    setQuotations(prev => {
-                        const index = prev.findIndex(q => q.id === activeQuote.id);
-                        if (index !== -1) {
-                            // Só atualiza se houver mudança real para evitar loops infinitos se usasse dependências erradas
-                            if (JSON.stringify(prev[index]) !== JSON.stringify(updatedQuote)) {
-                                const newQuotations = [...prev];
-                                newQuotations[index] = updatedQuote;
-                                return newQuotations;
-                            }
-                        }
-                        return prev;
-                    });
+        // Backup, Import e CSV
+        btnExport.addEventListener('click', () => {
+            const dataToExport = { version: '2.0', date: new Date().toISOString(), safetyMargin, categories, items };
+            const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url;
+            a.download = `gestao_compras_backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        });
+
+        btnImportTrigger.addEventListener('click', () => inputImport.click());
+
+        inputImport.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const imp = JSON.parse(event.target.result);
+                    if (imp.items && imp.categories) {
+                        items = imp.items; categories = imp.categories; safetyMargin = imp.safetyMargin || 15;
+                        saveData(); localStorage.setItem('inventory_categories_v2', JSON.stringify(categories)); localStorage.setItem('safety_margin', safetyMargin);
+                        inputSafetyMargin.value = safetyMargin; renderCategories(); render();
+                        showModal('<i class="ph-bold ph-check-circle text-emerald-500"></i> Sucesso', 'Dados restaurados.', true);
+                    } else throw new Error();
+                } catch (error) {
+                    showModal('<i class="ph-bold ph-warning text-rose-500"></i> Erro', 'Ficheiro inválido.', true);
                 }
-            }, [activeQuote]);
-
-            const handleNewQuotation = () => {
-                const newQuote = {
-                    id: Date.now(),
-                    title: 'Nova Cotação',
-                    date: new Date().toISOString().split('T')[0],
-                    status: 'Em Aberto',
-                    items: [],
-                    suppliers: [],
-                    prices: {},
-                    quantities: {},
-                    observation: '' // New field
-                };
-                // Adiciona imediatamente à lista e salva (devido ao useEffect)
-                setQuotations(prev => [newQuote, ...prev]);
-                setActiveQuote(newQuote);
-                setView('edit');
             };
+            reader.readAsText(file); inputImport.value = ''; 
+        });
 
-            const handleOpenQuotation = (quote) => {
-                setActiveQuote(quote);
-                setView('edit');
-            };
+        btnAdvanceMonth.addEventListener('click', () => {
+            showModal(
+                '<i class="ph-bold ph-calendar-forward text-amber-500"></i> Avançar Ciclo',
+                'Tem a certeza que deseja forçar o avanço do histórico mensal manualmente?',
+                false,
+                () => {
+                    items = items.map(item => ({...item, month3: item.month2, month2: item.month1, month1: 0, bought: false}));
+                    localStorage.setItem('last_cycle_month', currentMonthId); saveData(); render();
+                }
+            );
+        });
 
-            const handleDeleteQuotation = (id) => {
-                setQuotations(prev => prev.filter(q => q.id !== id));
-            };
+        btnZeroStock.addEventListener('click', () => {
+            showModal(
+                '<i class="ph-bold ph-arrows-down text-amber-500"></i> Zerar Estoques',
+                'Esta ação vai colocar o Estoque Atual de TODOS os produtos a 0 (zero), ideal para realizar um novo inventário físico. O histórico de consumo será mantido. Continuar?',
+                false,
+                () => {
+                    items = items.map(item => ({...item, currentStock: 0}));
+                    saveData(); render();
+                }
+            );
+        });
 
-            // Apenas fecha o editor, pois o salvamento é automático
-            const handleCloseEditor = () => {
-                setActiveQuote(null);
-                setView('list');
-            };
+        btnExportCsv.addEventListener('click', () => {
+            const data = calculateData(true); 
+            let csvContent = "\uFEFF"; 
+            csvContent += "Código;Produto;Categoria;Unidade;Estoque Atual;Média Mensal;Necessidade Total;Sugestão de Compra;Dias de Cobertura;Tendência;Status\n";
+            data.forEach(item => {
+                const row = [`"${item.code || ''}"`, `"${item.name}"`, `"${item.category}"`, `"${item.unit || 'UN'}"`, item.currentStock, item.mediaMensal, item.necessidadeTotal, item.sugestaoCompra, item.diasCobertura === 999 ? "Sem consumo" : item.diasCobertura, item.tendencia === 'up' ? 'Aumentando' : (item.tendencia === 'down' ? 'Diminuindo' : 'Estável'), item.status === 'critical' ? 'Crítico' : (item.status === 'warning' ? 'Atenção' : 'OK')].join(";");
+                csvContent += row + "\n";
+            });
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a"); const url = URL.createObjectURL(blob);
+            link.href = url; link.download = `relatorio_compras_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        });
 
-            // SE NÃO ESTIVER AUTENTICADO, MOSTRA LOGIN
-            if (!isAuthenticated) {
-                return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
+        btnExportApoio.addEventListener('click', () => {
+            // Preenche o Select do modal com as categorias atualizadas
+            selectExportApoioCat.innerHTML = '<option value="ALL">Todas as Categorias</option>' + 
+                categories.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join('');
+            
+            modalExportApoio.classList.remove('hidden');
+            modalExportApoio.classList.add('flex');
+        });
+
+        btnExportApoioCancel.addEventListener('click', () => {
+            modalExportApoio.classList.add('hidden');
+            modalExportApoio.classList.remove('flex');
+        });
+
+        btnExportApoioConfirm.addEventListener('click', () => {
+            modalExportApoio.classList.add('hidden');
+            modalExportApoio.classList.remove('flex');
+
+            const selectedCat = selectExportApoioCat.value;
+            let data = calculateData(true); 
+            
+            // Aplica o filtro da categoria se não for "Todas"
+            if (selectedCat !== 'ALL') {
+                data = data.filter(item => item.category === selectedCat);
             }
 
-            return (
-                <div className="flex min-h-screen bg-slate-50 text-slate-800 font-sans">
-                    <Sidebar 
-                        view={view} 
-                        setView={setView} 
-                        isExpanded={isSidebarOpen} 
-                        toggle={() => setIsSidebarOpen(prev => !prev)} 
-                    />
-
-                    <div className="flex-1 h-screen overflow-y-auto bg-slate-50/50">
-                        <main className="max-w-7xl mx-auto px-6 py-8 pb-20">
-                            {view === 'dashboard' && (
-                                <Dashboard 
-                                    quotations={quotations} 
-                                    onNew={handleNewQuotation}
-                                    onOpen={handleOpenQuotation} 
-                                />
-                            )}
-                            
-                            {view === 'list' && (
-                                <QuotationList 
-                                    quotations={quotations} 
-                                    onNew={handleNewQuotation}
-                                    onOpen={handleOpenQuotation}
-                                    onDelete={handleDeleteQuotation}
-                                />
-                            )}
-                            
-                            {view === 'edit' && activeQuote && (
-                                <QuotationEditor 
-                                    quote={activeQuote} 
-                                    setQuote={setActiveQuote}
-                                    onBack={handleCloseEditor}
-                                />
-                            )}
-
-                            {view === 'settings' && (
-                                <Settings 
-                                    quotations={quotations} 
-                                    setQuotations={setQuotations} 
-                                />
-                            )}
-                        </main>
-                    </div>
-                </div>
-            );
-        }
-
-        // --- Dashboard Avançado (Modernizado) ---
-        function Dashboard({ quotations, onNew, onOpen }) {
-            const stats = useMemo(() => {
-                const totalSpent = quotations.reduce((acc, q) => acc + (q.total || 0), 0);
-                const totalQuotes = quotations.length;
-                const completedQuotes = quotations.filter(q => q.status === 'Finalizada').length;
-                const winners = quotations.map(q => q.winner).filter(w => w && w !== 'N/A');
-                const winnerCounts = winners.reduce((acc, val) => { acc[val] = (acc[val] || 0) + 1; return acc; }, {});
-                const topWinner = Object.keys(winnerCounts).sort((a,b) => winnerCounts[b] - winnerCounts[a])[0] || '-';
-                return { totalSpent, totalQuotes, completedQuotes, topWinner };
-            }, [quotations]);
-
-            // Pegar as 4 últimas cotações para a lista rápida
-            const recentQuotes = useMemo(() => {
-                return [...quotations].sort((a, b) => b.id - a.id).slice(0, 4);
-            }, [quotations]);
+            const itemsToBuy = data.filter(item => item.sugestaoCompra > 0);
             
-            // Dicas rotativas
-            const tips = [
-                {
-                    title: "Dica Pro",
-                    text: "Adicione ao menos 3 fornecedores por cotação. O sistema irá automaticamente destacar as melhores oportunidades e sugerir compras fracionadas.",
-                    icon: Icons.Lightbulb
-                },
-                {
-                    title: "Histórico de Preços",
-                    text: "Consulte cotações antigas antes de fechar negócio. Identificar a variação de preço ao longo do tempo ajuda a negociar melhor.",
-                    icon: Icons.TrendingUp
-                },
-                {
-                    title: "Prazos de Entrega",
-                    text: "Sempre registre o prazo de entrega nas observações. O menor preço nem sempre compensa se o material não chegar a tempo.",
-                    icon: Icons.Clock
-                },
-                 {
-                    title: "Agrupamento",
-                    text: "Tente agrupar compras pequenas em uma única cotação maior. Fornecedores tendem a dar mais descontos para volumes maiores.",
-                    icon: Icons.Package
-                }
-            ];
+            if (itemsToBuy.length === 0) { 
+                showModal('<i class="ph-bold ph-info text-blue-500"></i> Info', `Sem itens para comprar${selectedCat !== 'ALL' ? ' nesta categoria' : ''}.`, true); 
+                return; 
+            }
 
-            const [currentTipIndex, setCurrentTipIndex] = useState(0);
+            const itemsWithCode = itemsToBuy.filter(item => item.code && item.code.trim() !== '');
+            const itemsWithoutCode = itemsToBuy.filter(item => !item.code || item.code.trim() === '');
 
-            useEffect(() => {
-                const interval = setInterval(() => {
-                    setCurrentTipIndex((prev) => (prev + 1) % tips.length);
-                }, 8000);
-                return () => clearInterval(interval);
-            }, []);
+            if (itemsWithCode.length === 0) {
+                showModal('<i class="ph-bold ph-warning text-rose-500"></i> Erro', 'Nenhum item a comprar possui Código preenchido.', true); return;
+            }
 
-            const currentTip = tips[currentTipIndex];
+            let csvContent = "";
+            itemsWithCode.forEach(item => {
+                const codItem = item.code.trim().substring(0, 20); 
+                const qtdItem = Math.floor(item.sugestaoCompra);   
+                csvContent += `${codItem};${qtdItem}\r\n`;         
+            });
 
-            return (
-                <div className="space-y-8 animate-fade-in no-print">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-2">
-                        <div>
-                            <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Painel de Controle</h2>
-                            <p className="text-slate-500 mt-1">Acompanhe o desempenho das suas compras.</p>
-                        </div>
-                        <button onClick={onNew} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl flex items-center shadow-lg shadow-blue-200 transition transform hover:-translate-y-0.5 active:translate-y-0">
-                            <Icons.Plus className="h-5 w-5 mr-2" /> Criar Nova Cotação
-                        </button>
-                    </div>
-
-                    {/* Grid de Stats Moderno */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-slate-100 flex flex-col justify-between h-32 hover:border-blue-200 transition-all cursor-default relative overflow-hidden group">
-                             <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full -mr-10 -mt-10 transition-transform group-hover:scale-110"></div>
-                             <div className="relative z-10">
-                                <p className="text-sm font-bold text-slate-400 uppercase tracking-wide mb-1">Cotações Totais</p>
-                                <h3 className="text-4xl font-bold text-slate-800">{stats.totalQuotes}</h3>
-                            </div>
-                            <div className="relative z-10 flex items-center text-blue-600 text-sm font-medium">
-                                <Icons.FileText className="h-4 w-4 mr-1" /> Ver todas
-                            </div>
-                        </div>
-                        
-                        <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_-3px_rgba(147,51,234,0.1)] border border-slate-100 flex flex-col justify-between h-32 hover:border-purple-200 transition-all cursor-default relative overflow-hidden group">
-                             <div className="absolute top-0 right-0 w-24 h-24 bg-purple-50 rounded-full -mr-10 -mt-10 transition-transform group-hover:scale-110"></div>
-                             <div className="relative z-10">
-                                <p className="text-sm font-bold text-slate-400 uppercase tracking-wide mb-1">Finalizadas</p>
-                                <h3 className="text-4xl font-bold text-slate-800">{stats.completedQuotes}</h3>
-                            </div>
-                            <div className="relative z-10 flex items-center text-purple-600 text-sm font-medium">
-                                <Icons.Check className="h-4 w-4 mr-1" /> Concluídas
-                            </div>
-                        </div>
-
-                        <div className="bg-white p-6 rounded-2xl shadow-[0_2px_10px_-3px_rgba(234,88,12,0.1)] border border-slate-100 flex flex-col justify-between h-32 hover:border-orange-200 transition-all cursor-default relative overflow-hidden group">
-                             <div className="absolute top-0 right-0 w-24 h-24 bg-orange-50 rounded-full -mr-10 -mt-10 transition-transform group-hover:scale-110"></div>
-                             <div className="relative z-10 overflow-hidden">
-                                <p className="text-sm font-bold text-slate-400 uppercase tracking-wide mb-1">Top Fornecedor</p>
-                                <h3 className="text-2xl font-bold text-slate-800 truncate leading-tight" title={stats.topWinner}>{stats.topWinner}</h3>
-                            </div>
-                            <div className="relative z-10 flex items-center text-orange-600 text-sm font-medium">
-                                <Icons.Trophy className="h-4 w-4 mr-1" /> Liderando
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Lista de Atividade Recente (Bento Grid Style) */}
-                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 col-span-2">
-                            <h3 className="font-bold text-slate-800 mb-6 flex items-center text-lg">
-                                <Icons.Clock className="h-5 w-5 mr-2 text-slate-400" /> Atividades Recentes
-                            </h3>
-                            
-                            <div className="grid gap-3">
-                                {recentQuotes.map(q => (
-                                    <div 
-                                        key={q.id} 
-                                        onClick={() => onOpen(q)}
-                                        className="flex items-center justify-between p-4 bg-slate-50 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-2xl cursor-pointer transition-all group"
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div className="bg-white p-3 rounded-xl border border-slate-100 text-slate-400 group-hover:text-blue-600 group-hover:border-blue-100 transition shadow-sm">
-                                                <Icons.FileText className="h-5 w-5" />
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-slate-700 text-sm group-hover:text-blue-700 transition">{q.title || "Nova Cotação"}</h4>
-                                                <span className="text-xs text-slate-400 flex items-center mt-0.5">
-                                                    {new Date(q.date).toLocaleDateString('pt-BR')}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${q.status === 'Finalizada' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                                                {q.status}
-                                            </span>
-                                            <div className="h-8 w-8 rounded-full bg-slate-200 group-hover:bg-blue-600 flex items-center justify-center transition">
-                                                <Icons.ChevronRight className="h-4 w-4 text-slate-500 group-hover:text-white transition" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                                {recentQuotes.length === 0 && (
-                                    <div className="text-center py-12 text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                                        <p>Nenhuma cotação recente encontrada.</p>
-                                        <button onClick={onNew} className="text-blue-600 text-sm font-bold mt-2 hover:underline">Criar a primeira</button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Card Dica Pro - Rotativo */}
-                        <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-3xl shadow-xl text-white relative overflow-hidden flex flex-col justify-between h-full min-h-[300px]">
-                            <div>
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
-                                <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-500 opacity-20 rounded-full blur-3xl -ml-10 -mb-10 pointer-events-none"></div>
-                                
-                                <div className="bg-white/10 w-12 h-12 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md border border-white/10 transition-all">
-                                    <currentTip.icon className="h-6 w-6 text-yellow-300" />
-                                </div>
-                                
-                                <div className="animate-fade-in" key={currentTipIndex}>
-                                    <h3 className="font-bold text-2xl mb-3 relative z-10">{currentTip.title}</h3>
-                                    <p className="text-slate-300 text-sm leading-relaxed relative z-10">
-                                        {currentTip.text}
-                                    </p>
-                                </div>
-                            </div>
-                            
-                            <div className="relative z-10 mt-8">
-                                <div className="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                                    <span>Dica {currentTipIndex + 1} de {tips.length}</span>
-                                    <div className="flex space-x-1">
-                                        {tips.map((_, idx) => (
-                                            <div key={idx} className={`h-1.5 w-1.5 rounded-full transition-colors ${idx === currentTipIndex ? 'bg-white' : 'bg-white/20'}`} />
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        function QuotationList({ quotations, onNew, onOpen, onDelete }) {
-            const [quoteToDelete, setQuoteToDelete] = useState(null);
-
-            return (
-                <div className="space-y-6 animate-fade-in no-print">
-                    <div className="flex justify-between items-center">
-                        <h2 className="text-2xl font-bold text-slate-800">Minhas Cotações</h2>
-                        <button onClick={onNew} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl flex items-center shadow-sm transition font-medium"><Icons.Plus className="h-5 w-5 mr-2" /> Nova Cotação</button>
-                    </div>
-                    
-                    {/* Lista em Grid de Cards Modernos */}
-                    <div className="grid gap-4">
-                        {quotations.map(q => (
-                            <div 
-                                key={q.id} 
-                                onClick={() => onOpen(q)}
-                                className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 cursor-pointer group relative overflow-hidden"
-                            >
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`p-3 rounded-xl transition-colors ${q.status === 'Finalizada' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
-                                            {q.status === 'Finalizada' ? <Icons.Check className="h-6 w-6" /> : <Icons.FileText className="h-6 w-6" />}
-                                        </div>
-                                        <div>
-                                            <h3 className="font-bold text-slate-800 text-lg group-hover:text-blue-600 transition">{q.title || "Nova Cotação"}</h3>
-                                            <p className="text-xs text-slate-400 font-medium flex items-center mt-1">
-                                                <Icons.Clock className="h-3 w-3 mr-1" /> {new Date(q.date).toLocaleDateString('pt-BR')}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    
-                                    {/* Botão de Excluir (Discreto) */}
-                                    <button 
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setQuoteToDelete(q);
-                                        }}
-                                        className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition opacity-0 group-hover:opacity-100"
-                                        title="Excluir"
-                                    >
-                                        <Icons.Trash2 className="h-5 w-5" />
-                                    </button>
-                                </div>
-
-                                <div className="flex items-end justify-between border-t border-slate-50 pt-4">
-                                    <div>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Vencedor</p>
-                                        <div className="flex items-center text-slate-700 font-medium text-sm">
-                                            {q.winner && q.winner !== 'N/A' ? (
-                                                <><Icons.Trophy className="h-4 w-4 text-yellow-500 mr-2" /> {q.winner}</>
-                                            ) : (
-                                                <span className="text-slate-400 italic">Em aberto</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total</p>
-                                        <p className={`text-xl font-bold font-mono ${q.status === 'Finalizada' ? 'text-emerald-600' : 'text-slate-800'}`}>
-                                            {q.total ? `R$ ${q.total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : '-'}
-                                        </p>
-                                    </div>
-                                </div>
-                                
-                                {/* Status Badge flutuante se necessário, ou integrado visualmente */}
-                                <div className={`absolute top-0 right-0 w-1.5 h-full ${q.status === 'Finalizada' ? 'bg-emerald-500' : 'bg-blue-500'} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
-                            </div>
-                        ))}
-                        
-                        {quotations.length === 0 && (
-                            <div className="p-12 text-center text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">
-                                Nenhuma cotação encontrada. Comece criando uma nova!
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Modal de Confirmação de Exclusão (Novo Layout) */}
-                    {quoteToDelete && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={() => setQuoteToDelete(null)}>
-                            {/* Overlay transparente para capturar cliques fora */}
-                            <div className="absolute inset-0 bg-transparent" />
-                            
-                            <div className="bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 max-w-xs w-full overflow-hidden transform transition-all scale-100 relative z-10 p-6" onClick={e => e.stopPropagation()}>
-                                <div className="flex flex-col items-center text-center">
-                                    <div className="h-12 w-12 bg-red-50 rounded-2xl flex items-center justify-center mb-4 text-red-500 shadow-sm">
-                                        <Icons.Trash2 className="h-6 w-6" />
-                                    </div>
-                                    
-                                    <h3 className="text-lg font-bold text-slate-800 mb-1">Apagar Cotação?</h3>
-                                    
-                                    <p className="text-sm text-slate-500 mb-6 leading-relaxed px-2">
-                                        Isso excluirá permanentemente <br/>
-                                        <span className="font-semibold text-slate-700">"{quoteToDelete.title}"</span>.
-                                    </p>
-                                    
-                                    <div className="flex flex-col w-full gap-2">
-                                        <button 
-                                            onClick={() => {
-                                                onDelete(quoteToDelete.id);
-                                                setQuoteToDelete(null);
-                                            }}
-                                            className="w-full py-2.5 px-4 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 shadow-md shadow-red-100 transition active:scale-95"
-                                        >
-                                            Sim, excluir agora
-                                        </button>
-                                        <button 
-                                            onClick={() => setQuoteToDelete(null)}
-                                            className="w-full py-2.5 px-4 bg-white text-slate-500 rounded-xl text-sm font-medium hover:bg-slate-50 hover:text-slate-700 transition"
-                                        >
-                                            Cancelar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        }
-
-        // --- Editor Moderno com Cards e Resumos ---
-        function QuotationEditor({ quote, setQuote, onBack, onPrint }) {
-            const [newItemName, setNewItemName] = useState('');
-            const [newItemQty, setNewItemQty] = useState(1);
-            const [newItemUnit, setNewItemUnit] = useState('un');
-            const [newSupplierName, setNewSupplierName] = useState('');
-            const [editingItemId, setEditingItemId] = useState(null);
-            const [tempItemName, setTempItemName] = useState('');
-            
-            // Novos estados para edição
-            const [editingSupplierId, setEditingSupplierId] = useState(null);
-            const [tempSupplierName, setTempSupplierName] = useState('');
-            
-            const [editingItemQtyId, setEditingItemQtyId] = useState(null);
-            const [tempItemQty, setTempItemQty] = useState('');
-
-            const addItem = () => {
-                if (!newItemName) return;
-                const item = { id: Date.now(), name: newItemName, qty: parseFloat(newItemQty), unit: newItemUnit };
-                setQuote({ ...quote, items: [...quote.items, item] });
-                setNewItemName(''); setNewItemQty(1);
-            };
-
-            const addSupplier = () => {
-                if (!newSupplierName) return;
-                const supplier = { id: Date.now(), name: newSupplierName };
-                setQuote({ ...quote, suppliers: [...quote.suppliers, supplier] });
-                setNewSupplierName('');
-            };
-
-            const updatePrice = (itemId, supplierId, value) => {
-                const key = `${itemId}_${supplierId}`;
-                setQuote({ ...quote, prices: { ...quote.prices, [key]: value } });
-            };
-
-            const updateQuantity = (itemId, supplierId, value) => {
-                const key = `${itemId}_${supplierId}`;
-                setQuote({ ...quote, quantities: { ...quote.quantities, [key]: value } });
-            };
-
-            const startEditingItem = (item) => {
-                setEditingItemId(item.id);
-                setTempItemName(item.name);
-            };
-
-            const saveItemName = (id) => {
-                if (tempItemName.trim()) {
-                    setQuote({ ...quote, items: quote.items.map(i => i.id === id ? { ...i, name: tempItemName } : i) });
-                }
-                setEditingItemId(null);
-            };
-            
-            // Funções para editar nome do fornecedor
-            const startEditingSupplier = (supplier) => {
-                setEditingSupplierId(supplier.id);
-                setTempSupplierName(supplier.name);
-            };
-
-            const saveSupplierName = (id) => {
-                if (tempSupplierName.trim()) {
-                    setQuote({ ...quote, suppliers: quote.suppliers.map(s => s.id === id ? { ...s, name: tempSupplierName } : s) });
-                }
-                setEditingSupplierId(null);
-            };
-            
-            // Funções para editar quantidade base do item
-            const startEditingItemQty = (item) => {
-                setEditingItemQtyId(item.id);
-                setTempItemQty(item.qty);
-            };
-
-            const saveItemQty = (id) => {
-                const newQty = parseFloat(tempItemQty);
-                if (!isNaN(newQty) && newQty > 0) {
-                    setQuote({ ...quote, items: quote.items.map(i => i.id === id ? { ...i, qty: newQty } : i) });
-                }
-                setEditingItemQtyId(null);
-            };
-
-            const removeItem = (id) => setQuote({ ...quote, items: quote.items.filter(i => i.id !== id) });
-            const removeSupplier = (id) => setQuote({ ...quote, suppliers: quote.suppliers.filter(s => s.id !== id) });
-
-            const calculations = useMemo(() => {
-                const totalsPerSupplier = {};
-                let minTotal = Infinity;
-                let winnerId = null;
-                let bestMixTotal = 0;
-
-                quote.suppliers.forEach(s => {
-                    let sum = 0;
-                    quote.items.forEach(i => {
-                        const key = `${i.id}_${s.id}`;
-                        const qty = quote.quantities?.[key] !== undefined ? parseFloat(quote.quantities[key]) : i.qty;
-                        sum += (parseFloat(quote.prices[key]) || 0) * qty;
-                    });
-                    totalsPerSupplier[s.id] = sum;
-                    if (sum > 0 && sum < minTotal) { minTotal = sum; winnerId = s.id; }
-                });
-
-                quote.items.forEach(i => {
-                    let minItemPrice = Infinity;
-                    let hasPrice = false;
-                    quote.suppliers.forEach(s => {
-                        const key = `${i.id}_${s.id}`;
-                        const p = parseFloat(quote.prices[key]) || 0;
-                        const qty = quote.quantities?.[key] !== undefined ? parseFloat(quote.quantities[key]) : i.qty;
-                        
-                        if (p > 0) {
-                            const total = p * qty;
-                            if (total < minItemPrice) minItemPrice = total;
-                            hasPrice = true;
-                        }
-                    });
-                    if (hasPrice) bestMixTotal += minItemPrice;
-                });
-
-                return { 
-                    totalsPerSupplier, 
-                    winnerId, 
-                    minTotal: (minTotal === Infinity ? 0 : minTotal),
-                    bestMixTotal
-                };
-            }, [quote]);
-
-            const summaryStats = useMemo(() => {
-                const itemCount = quote.items.length;
-                const supplierCount = quote.suppliers.length;
-                const bestPrice = calculations.winnerId ? calculations.totalsPerSupplier[calculations.winnerId] : 0;
-                let highestPrice = 0;
-                Object.values(calculations.totalsPerSupplier).forEach(val => { if (val > highestPrice) highestPrice = val; });
-                const savings = highestPrice > 0 && bestPrice > 0 ? highestPrice - bestPrice : 0;
-                const winnerName = quote.suppliers.find(s => s.id === calculations.winnerId)?.name || 'N/A';
+            const exportAction = () => {
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=windows-1252;' });
+                const link = document.createElement("a"); const url = URL.createObjectURL(blob);
+                link.href = url; 
+                // Adiciona o nome da categoria no ficheiro baixado, se houver filtro
+                const catNameFile = selectedCat !== 'ALL' ? selectedCat.replace(/\s+/g, '_').toLowerCase() + '_' : '';
+                link.download = `upload_apoio_${catNameFile}${new Date().toISOString().split('T')[0]}.csv`;
                 
-                const mixSavings = bestPrice > 0 ? bestPrice - calculations.bestMixTotal : 0;
-
-                return { itemCount, supplierCount, bestPrice, savings, winnerName, mixSavings };
-            }, [quote, calculations]);
-
-            // Handler para impressão em nova janela
-            const handlePrint = () => {
-                openPrintWindow(quote, calculations, summaryStats);
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
             };
 
-            return (
-                <div className="space-y-8 animate-fade-in no-print max-w-full">
-                    {/* Header Moderno com Indicador de Auto-Save */}
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <div className="flex items-center space-x-4 w-full md:w-auto">
-                            <button onClick={onBack} className="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl transition text-slate-600">
-                                <Icons.ArrowLeft className="h-5 w-5" />
-                            </button>
-                            <div className="flex-1">
-                                <div className="flex items-center gap-3">
-                                    <label className="text-xs font-bold text-blue-600 uppercase tracking-wider">Editando Cotação</label>
-                                    <span className="flex items-center text-[10px] text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium">
-                                        <Icons.CloudCheck className="h-3 w-3 mr-1" /> Salvo automaticamente
-                                    </span>
-                                </div>
-                                <input 
-                                    type="text" 
-                                    value={quote.title} 
-                                    onChange={(e) => setQuote({...quote, title: e.target.value})}
-                                    className="text-2xl font-bold text-slate-800 bg-transparent border-none p-0 w-full focus:ring-0 placeholder-slate-300" 
-                                    placeholder="Nome da Cotação..."
-                                />
-                                <div className="flex items-center text-sm text-slate-400 mt-1">
-                                    <Icons.FileText className="h-3 w-3 mr-1" />
-                                    {new Date(quote.date).toLocaleDateString('pt-BR')}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex space-x-3 w-full md:w-auto">
-                            <button onClick={handlePrint} className="flex-1 md:flex-none justify-center bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-3 rounded-xl flex items-center transition font-medium">
-                                <Icons.Printer className="h-5 w-5 mr-2" /> <span className="hidden sm:inline">Imprimir Relatório</span>
-                            </button>
-                            <button onClick={onBack} className="flex-1 md:flex-none justify-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl flex items-center shadow-lg shadow-blue-200 transition font-medium">
-                                <Icons.Check className="h-5 w-5 mr-2" /> Concluir
-                            </button>
-                        </div>
-                    </div>
+            if (itemsWithoutCode.length > 0) {
+                showModal('<i class="ph-bold ph-warning text-amber-500"></i> Faltam Códigos', `Existem ${itemsWithoutCode.length} produto(s) sem código. Serão ignorados na exportação para o Apoio. Continuar?`, false, exportAction);
+            } else { exportAction(); }
+        });
 
-                    {/* 2. Cards de Resumo */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center hover:shadow-md transition">
-                            <div className="bg-blue-50 p-2.5 rounded-full text-blue-600 mb-3"><Icons.Package className="h-5 w-5" /></div>
-                            <span className="text-2xl font-bold text-slate-800">{summaryStats.itemCount}</span>
-                            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Itens</span>
-                        </div>
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center hover:shadow-md transition">
-                            <div className="bg-purple-50 p-2.5 rounded-full text-purple-600 mb-3"><Icons.Store className="h-5 w-5" /></div>
-                            <span className="text-2xl font-bold text-slate-800">{summaryStats.supplierCount}</span>
-                            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Fornecedores</span>
-                        </div>
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center relative overflow-hidden hover:shadow-md transition">
-                            <div className="bg-green-50 p-2.5 rounded-full text-green-600 mb-3"><Icons.Trophy className="h-5 w-5" /></div>
-                            <span className="text-lg font-bold text-slate-800 truncate w-full px-2" title={summaryStats.winnerName}>{summaryStats.winnerName}</span>
-                            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Vencedor</span>
-                            {summaryStats.bestPrice > 0 && <div className="text-xs text-green-600 font-bold mt-1 bg-green-50 px-2 py-0.5 rounded-full">R$ {summaryStats.bestPrice.toLocaleString('pt-BR')}</div>}
-                        </div>
-                        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-5 rounded-2xl shadow-md text-white flex flex-col items-center justify-center text-center relative overflow-hidden">
-                             {/* Card Inteligente de Economia */}
-                             {summaryStats.mixSavings > 0 ? (
-                                <>
-                                    <div className="absolute top-2 right-2 animate-pulse"><Icons.Lightbulb className="h-5 w-5 text-yellow-300" /></div>
-                                    <span className="text-2xl font-bold">R$ {(summaryStats.savings + summaryStats.mixSavings).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
-                                    <span className="text-xs text-indigo-100 font-bold uppercase tracking-wider mt-1">Economia Máxima</span>
-                                    <div className="text-[10px] bg-white/20 px-2 py-0.5 rounded mt-2">Com compra fracionada</div>
-                                </>
-                             ) : (
-                                <>
-                                    <div className="bg-white/20 p-2 rounded-full mb-3 backdrop-blur-sm"><Icons.TrendingUp className="h-5 w-5 text-white" /></div>
-                                    <span className="text-2xl font-bold">R$ {summaryStats.savings.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
-                                    <span className="text-xs text-indigo-100 font-bold uppercase tracking-wider">Economia Total</span>
-                                    <span className="text-[10px] text-indigo-200 mt-1">vs. Maior Proposta</span>
-                                </>
-                             )}
-                        </div>
-                    </div>
-                    
-                    {/* Alerta de Sugestão de Mix se valer a pena */}
-                    {summaryStats.mixSavings > 0 && (
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 text-amber-800 animate-fade-in mt-6">
-                            <div className="bg-amber-100 p-2 rounded-lg"><Icons.Split className="h-6 w-6 text-amber-600" /></div>
-                            <div>
-                                <h4 className="font-bold text-sm uppercase mb-1">Oportunidade de Economia Detectada!</h4>
-                                <p className="text-sm">
-                                    Se você comprar cada item separadamente no fornecedor mais barato, o total será <strong>R$ {calculations.bestMixTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong>. 
-                                    Isso gera uma economia adicional de <strong>R$ {summaryStats.mixSavings.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong> em relação ao vencedor.
-                                </p>
-                            </div>
-                        </div>
-                    )}
+        btnPrint.addEventListener('click', generatePrintReport);
 
-                    {/* 3. Área de Entrada (Cards Estilizados) */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative group">
-                            <div className="absolute top-4 bottom-4 left-0 w-1.5 bg-blue-500 rounded-r-full"></div>
-                            <h3 className="font-bold text-slate-800 mb-4 flex items-center text-lg pl-3">
-                                <span className="bg-blue-50 text-blue-600 p-1.5 rounded-lg mr-3"><Icons.Package className="h-5 w-5" /></span>
-                                Adicionar Item
-                            </h3>
-                            <div className="flex gap-3">
-                                <div className="flex-1 relative">
-                                    <input type="text" placeholder="Nome do item..." className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 transition placeholder-slate-400" value={newItemName} onChange={e => setNewItemName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addItem()} />
-                                </div>
-                                <div className="flex gap-2">
-                                    <input type="number" placeholder="Qtd" className="w-20 bg-slate-50 border-none rounded-xl px-3 py-3 text-sm focus:ring-2 focus:ring-blue-500 text-center" value={newItemQty} onChange={e => setNewItemQty(e.target.value)} />
-                                    <select className="w-20 bg-slate-50 border-none rounded-xl px-2 py-3 text-sm focus:ring-2 focus:ring-blue-500 text-center cursor-pointer text-slate-600" value={newItemUnit} onChange={e => setNewItemUnit(e.target.value)}><option>un</option><option>kg</option><option>m</option><option>m²</option><option>cx</option></select>
-                                </div>
-                            </div>
-                            <button onClick={addItem} className="w-full mt-3 bg-blue-50 hover:bg-blue-100 text-blue-600 py-2.5 rounded-xl font-medium text-sm transition flex items-center justify-center">
-                                <Icons.Plus className="h-4 w-4 mr-1" /> Inserir Item
-                            </button>
-                        </div>
-
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative group">
-                            <div className="absolute top-4 bottom-4 left-0 w-1.5 bg-purple-500 rounded-r-full"></div>
-                            <h3 className="font-bold text-slate-800 mb-4 flex items-center text-lg pl-3">
-                                <span className="bg-purple-50 text-purple-600 p-1.5 rounded-lg mr-3"><Icons.Store className="h-5 w-5" /></span>
-                                Adicionar Concorrente
-                            </h3>
-                            <div className="flex gap-3">
-                                <input type="text" placeholder="Nome da Loja / Fornecedor..." className="flex-1 bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500 transition placeholder-slate-400" value={newSupplierName} onChange={e => setNewSupplierName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addSupplier()} />
-                            </div>
-                            <button onClick={addSupplier} className="w-full mt-3 bg-purple-50 hover:bg-purple-100 text-purple-600 py-2.5 rounded-xl font-medium text-sm transition flex items-center justify-center">
-                                <Icons.Plus className="h-4 w-4 mr-1" /> Inserir Fornecedor
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* 4. O Mapa (Card Principal) */}
-                    <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden mt-6">
-                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                            <div>
-                                <h3 className="font-bold text-slate-800 text-lg">Comparativo de Preços</h3>
-                                <p className="text-slate-400 text-xs mt-1">Preencha os valores unitários nas colunas abaixo</p>
-                            </div>
-                            <div className="hidden sm:flex items-center gap-4 text-xs font-medium text-slate-500">
-                                <div className="flex items-center"><span className="w-3 h-3 bg-green-200 border border-green-300 rounded-full mr-2 shadow-sm"></span> Melhor Preço do Item</div>
-                                <div className="flex items-center"><span className="w-3 h-3 bg-emerald-600 rounded-full mr-2 shadow-sm"></span> Fornecedor Vencedor (Total)</div>
-                            </div>
-                        </div>
-
-                        <div className="overflow-x-auto custom-scrollbar pb-2">
-                            <table className="w-full border-collapse min-w-[800px]">
-                                <thead>
-                                    <tr className="bg-slate-50/80 text-slate-500 text-xs font-bold uppercase tracking-wider">
-                                        <th className="py-4 px-4 border-r border-slate-100 w-12 text-center">#</th>
-                                        <th className="py-4 px-4 text-left border-r border-slate-100 min-w-[200px]">Item</th>
-                                        <th className="py-4 px-4 text-center border-r border-slate-100 w-24">Qtd.</th>
-                                        {quote.suppliers.map(s => (
-                                            <th key={s.id} className={`py-4 px-4 text-center border-r border-slate-100 min-w-[140px] relative group ${calculations.winnerId === s.id ? 'bg-emerald-50 text-emerald-800' : ''}`}>
-                                                {editingSupplierId === s.id ? (
-                                                    <input 
-                                                        autoFocus
-                                                        className="w-full bg-white border border-blue-400 rounded px-2 py-1 text-center text-xs font-bold text-slate-700 outline-none"
-                                                        value={tempSupplierName}
-                                                        onChange={(e) => setTempSupplierName(e.target.value)}
-                                                        onBlur={() => saveSupplierName(s.id)}
-                                                        onKeyDown={(e) => e.key === 'Enter' && saveSupplierName(s.id)}
-                                                    />
-                                                ) : (
-                                                    <span 
-                                                        className="cursor-pointer hover:text-blue-600 transition"
-                                                        onClick={() => startEditingSupplier(s)}
-                                                        title="Clique para editar nome"
-                                                    >
-                                                        {s.name}
-                                                    </span>
-                                                )}
-                                                <button onClick={() => removeSupplier(s.id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 transition"><Icons.Trash2 className="h-3 w-3" /></button>
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody className="text-slate-600 text-sm">
-                                    {quote.items.map(item => {
-                                        const rowPrices = quote.suppliers
-                                            .map(s => parseFloat(quote.prices[`${item.id}_${s.id}`]) || 0)
-                                            .filter(p => p > 0);
-                                        const minRowPrice = rowPrices.length > 0 ? Math.min(...rowPrices) : null;
-
-                                        return (
-                                            <tr key={item.id} className="border-b border-slate-50 hover:bg-blue-50/30 transition">
-                                                <td className="p-3 text-center border-r border-slate-50">
-                                                    <button onClick={() => removeItem(item.id)} className="text-slate-300 hover:text-red-500 transition p-1 hover:bg-red-50 rounded"><Icons.Trash2 className="h-4 w-4" /></button>
-                                                </td>
-                                                <td className="p-3 border-r border-slate-50 font-medium text-slate-800 group relative">
-                                                    {editingItemId === item.id ? (
-                                                        <input 
-                                                            autoFocus
-                                                            className="w-full border-blue-400 border rounded px-2 py-1 outline-none shadow-sm"
-                                                            value={tempItemName}
-                                                            onChange={e => setTempItemName(e.target.value)}
-                                                            onBlur={() => saveItemName(item.id)}
-                                                            onKeyDown={e => e.key === 'Enter' && saveItemName(item.id)}
-                                                        />
-                                                    ) : (
-                                                        <div className="flex items-center justify-between cursor-pointer" onClick={() => startEditingItem(item)}>
-                                                            <span>{item.name}</span>
-                                                            <Icons.Pencil className="h-3 w-3 text-slate-300 opacity-0 group-hover:opacity-100 ml-2" />
-                                                        </div>
-                                                    )}
-                                                </td>
-                                                <td className="p-3 text-center border-r border-slate-50">
-                                                    {editingItemQtyId === item.id ? (
-                                                        <input 
-                                                            autoFocus
-                                                            type="number"
-                                                            className="w-16 bg-white border border-blue-400 rounded px-1 py-0.5 text-center text-xs font-bold outline-none"
-                                                            value={tempItemQty}
-                                                            onChange={(e) => setTempItemQty(e.target.value)}
-                                                            onBlur={() => saveItemQty(item.id)}
-                                                            onKeyDown={(e) => e.key === 'Enter' && saveItemQty(item.id)}
-                                                        />
-                                                    ) : (
-                                                        <span 
-                                                            className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold cursor-pointer hover:bg-slate-200 transition"
-                                                            onClick={() => startEditingItemQty(item)}
-                                                            title="Clique para editar quantidade base"
-                                                        >
-                                                            {item.qty} {item.unit}
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                {quote.suppliers.map(s => {
-                                                    const priceVal = parseFloat(quote.prices[`${item.id}_${s.id}`]) || 0;
-                                                    const isBestPrice = minRowPrice !== null && priceVal === minRowPrice;
-                                                    const specificQty = quote.quantities[`${item.id}_${s.id}`];
-                                                    const displayQty = specificQty !== undefined ? specificQty : item.qty;
-
-                                                    return (
-                                                        <td key={s.id} className={`p-2 border-r border-slate-50 ${isBestPrice ? 'bg-green-100/60 font-medium' : ''}`}>
-                                                            <div className="relative group/input">
-                                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">R$</span>
-                                                                <input 
-                                                                    type="number" 
-                                                                    className={`w-full text-right bg-transparent outline-none border border-transparent hover:border-slate-200 focus:border-blue-400 focus:bg-white rounded px-2 py-1.5 pl-8 transition font-medium ${isBestPrice ? 'text-green-700 font-bold' : 'text-slate-700'}`}
-                                                                    placeholder="0,00"
-                                                                    value={quote.prices[`${item.id}_${s.id}`] || ''} 
-                                                                    onChange={(e) => updatePrice(item.id, s.id, e.target.value)} 
-                                                                />
-                                                            </div>
-                                                            <div className="flex items-center justify-end gap-1 mt-1 px-1">
-                                                                <span className="text-[10px] text-slate-400">Qtd:</span>
-                                                                <input 
-                                                                    type="number" 
-                                                                    className="w-12 text-right bg-transparent border-b border-slate-200 text-[10px] text-slate-500 focus:border-blue-400 outline-none"
-                                                                    placeholder={item.qty}
-                                                                    value={specificQty || ''}
-                                                                    onChange={(e) => updateQuantity(item.id, s.id, e.target.value)}
-                                                                />
-                                                            </div>
-                                                            {quote.prices[`${item.id}_${s.id}`] && (
-                                                                <div className="text-[10px] text-right text-slate-400 mt-1 font-mono px-2 border-t border-dashed border-slate-200 pt-1">
-                                                                    Total: {(parseFloat(quote.prices[`${item.id}_${s.id}`]) * parseFloat(displayQty)).toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-                                                                </div>
-                                                            )}
-                                                        </td>
-                                                    );
-                                                })}
-                                            </tr>
-                                        );
-                                    })}
-                                    {quote.items.length === 0 && (
-                                        <tr><td colSpan={3 + quote.suppliers.length} className="py-12 text-center text-slate-400 italic bg-slate-50/30">Adicione itens para começar o mapa comparativo.</td></tr>
-                                    )}
-                                </tbody>
-                                {quote.items.length > 0 && quote.suppliers.length > 0 && (
-                                    <tfoot className="bg-slate-50 border-t border-slate-200 font-bold text-slate-700">
-                                        <tr>
-                                            <td colSpan="3" className="py-5 px-4 text-right border-r border-slate-200 uppercase text-xs tracking-wider">Valor Total da Cotação:</td>
-                                            {quote.suppliers.map(s => (
-                                                <td key={s.id} className={`py-5 px-4 text-right border-r border-slate-200 text-sm ${calculations.winnerId === s.id ? 'bg-emerald-600 text-white shadow-inner' : ''}`}>
-                                                    {calculations.winnerId === s.id && (
-                                                        <div className="text-[10px] uppercase text-emerald-200 mb-1 flex items-center justify-end gap-1">
-                                                            <Icons.Trophy className="h-3 w-3" /> Vencedor
-                                                        </div>
-                                                    )}
-                                                    R$ {calculations.totalsPerSupplier[s.id].toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-                                                </td>
-                                            ))}
-                                        </tr>
-                                    </tfoot>
-                                )}
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mt-6">
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Observações / Data de Faturamento</label>
-                        <textarea
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition resize-none h-24"
-                            placeholder="Ex: Faturamento para 30 dias, Entrega imediata..."
-                            value={quote.observation || ''}
-                            onChange={(e) => setQuote({ ...quote, observation: e.target.value })}
-                        />
-                    </div>
-                </div>
-            );
+        // Modal e Utils
+        function showModal(title, message, isAlert = false, onConfirm = null) {
+            modalTitle.innerHTML = title; modalMessage.textContent = message; modalAction = onConfirm;
+            if (isAlert) {
+                btnModalCancel.classList.add('hidden'); btnModalConfirm.textContent = 'Ok, entendi';
+                btnModalConfirm.className = 'px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-200';
+            } else {
+                btnModalCancel.classList.remove('hidden'); btnModalConfirm.textContent = 'Confirmar Ação';
+                btnModalConfirm.className = 'px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-rose-200';
+            }
+            customModal.classList.remove('hidden'); customModal.classList.add('flex');
         }
 
-        // --- Aba de Configurações ---
-        function Settings({ quotations, setQuotations }) {
+        function hideModal() { customModal.classList.add('hidden'); customModal.classList.remove('flex'); modalAction = null; }
+        btnModalCancel.addEventListener('click', hideModal);
+        btnModalConfirm.addEventListener('click', () => { if (modalAction) modalAction(); if (!customModal.classList.contains('hidden')) hideModal(); });
+
+        btnClearAll.addEventListener('click', () => {
+            showModal('<i class="ph-bold ph-warning text-rose-500"></i> Limpeza Total', 'Apagar TODOS os produtos do sistema?', false, () => { items = []; saveData(); render(); });
+        });
+
+        inputSearch.addEventListener('input', (e) => { searchTerm = e.target.value.toLowerCase(); render(); });
+        selectSort.addEventListener('change', (e) => { currentSort = e.target.value; render(); });
+        selectFilter.addEventListener('change', (e) => { currentFilter = e.target.value; render(); });
+        btnClearCart.addEventListener('click', () => { items = items.map(item => ({ ...item, bought: false })); saveData(); render(); });
+        btnCancelEdit.addEventListener('click', exitEditMode);
+        inputSafetyMargin.addEventListener('input', (e) => { safetyMargin = Number(e.target.value); localStorage.setItem('safety_margin', safetyMargin); render(); });
+
+        // Adição e Edição de Produtos
+        formAddItem.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('item-name').value;
+            const code = document.getElementById('item-code').value.trim();
+            const category = document.getElementById('item-category').value;
+            const unit = document.getElementById('item-unit').value;
+            const currentStock = Number(document.getElementById('item-stock').value) || 0;
+            const month1 = Number(document.getElementById('item-m1').value) || 0;
+            const month2 = Number(document.getElementById('item-m2').value) || 0;
+            const month3 = Number(document.getElementById('item-m3').value) || 0;
+
+            if (!name) return;
+
+            if (editingId) {
+                items = items.map(item => item.id === editingId ? { ...item, name, code, category, unit, currentStock, month1, month2, month3 } : item);
+                exitEditMode();
+            } else {
+                items.push({ id: Date.now().toString(), code, name, category, unit, currentStock, month1, month2, month3, bought: false });
+                formAddItem.reset(); document.getElementById('item-stock').value = 0; selectUnit.value = 'UN';
+            }
+            saveData(); render();
+        });
+
+        // Tabela Ações
+        tableBody.addEventListener('click', (e) => {
+            const btnRemove = e.target.closest('.btn-remove'); const btnEdit = e.target.closest('.btn-edit'); const btnDuplicate = e.target.closest('.btn-duplicate');
+            const btnQuote = e.target.closest('.btn-quote'); const btnStockUp = e.target.closest('.btn-stock-up'); const btnStockDown = e.target.closest('.btn-stock-down');
+            const chkBought = e.target.closest('.chk-bought');
+
+            if (btnRemove) {
+                const id = btnRemove.getAttribute('data-id'); const itemObj = items.find(i => i.id === id);
+                if (itemObj) showModal('<i class="ph-bold ph-trash text-rose-500"></i> Excluir Produto', `Deseja eliminar "${itemObj.name}"?`, false, () => { items = items.filter(item => item.id !== id); saveData(); render(); });
+            } else if (btnEdit) { enterEditMode(btnEdit.getAttribute('data-id'));
+            } else if (btnDuplicate) {
+                const itemToCopy = items.find(i => i.id === btnDuplicate.getAttribute('data-id'));
+                if (itemToCopy) { items.push({...itemToCopy, id: Date.now().toString(), name: itemToCopy.name + ' (Cópia)', bought: false}); saveData(); render(); }
+            } else if (btnQuote) {
+                const itemObj = items.find(i => i.id === btnQuote.getAttribute('data-id'));
+                if (itemObj) window.open(`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(itemObj.name)}`, '_blank');
+            } else if (btnStockUp) { updateStock(btnStockUp.getAttribute('data-id'), 1);
+            } else if (btnStockDown) { updateStock(btnStockDown.getAttribute('data-id'), -1);
+            } else if (chkBought) { items = items.map(item => item.id === chkBought.getAttribute('data-id') ? { ...item, bought: chkBought.checked } : item); saveData(); render(); }
+        });
+
+        // Gestão Categorias
+        btnCancelCategory.addEventListener('click', exitCategoryEditMode);
+
+        formAddCategory.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newCat = inputNewCategory.value.trim();
+            if (!newCat) return;
+
+            if (editingCategoryName) {
+                if (newCat.toLowerCase() !== editingCategoryName.toLowerCase() && categories.map(c => c.toLowerCase()).includes(newCat.toLowerCase())) {
+                    showModal('<i class="ph-bold ph-warning text-amber-500"></i> Atenção', 'Categoria já existe.', true); return;
+                }
+                categories = categories.map(c => c === editingCategoryName ? newCat : c);
+                items = items.map(item => item.category === editingCategoryName ? { ...item, category: newCat } : item);
+                localStorage.setItem('inventory_categories_v2', JSON.stringify(categories)); saveData(); renderCategories(); render(); exitCategoryEditMode();
+            } else {
+                if (!categories.map(c => c.toLowerCase()).includes(newCat.toLowerCase())) {
+                    categories.push(newCat); localStorage.setItem('inventory_categories_v2', JSON.stringify(categories)); renderCategories(); inputNewCategory.value = '';
+                } else showModal('<i class="ph-bold ph-warning text-amber-500"></i> Atenção', 'Categoria já existe.', true);
+            }
+        });
+
+        gridCategories.addEventListener('click', (e) => {
+            const btnRemove = e.target.closest('.btn-remove-cat'); const btnEdit = e.target.closest('.btn-edit-cat');
+            if (btnRemove) {
+                const catToRemove = btnRemove.getAttribute('data-cat');
+                if (items.some(item => item.category === catToRemove)) { showModal('<i class="ph-bold ph-warning text-amber-500"></i> Atenção', 'Existem produtos a usar esta categoria. Remova-os primeiro.', true); return; }
+                if (categories.length <= 1) { showModal('<i class="ph-bold ph-warning text-amber-500"></i> Atenção', 'Mantenha pelo menos uma.', true); return; }
+                showModal('<i class="ph-bold ph-trash text-rose-500"></i> Excluir Categoria', `Eliminar "${catToRemove}"?`, false, () => {
+                    categories = categories.filter(c => c !== catToRemove); localStorage.setItem('inventory_categories_v2', JSON.stringify(categories)); renderCategories();
+                });
+            } else if (btnEdit) { enterCategoryEditMode(btnEdit.getAttribute('data-cat')); }
+        });
+
+        function enterCategoryEditMode(catName) {
+            editingCategoryName = catName; inputNewCategory.value = catName;
+            titleCategoryForm.innerHTML = '<i class="ph-bold ph-pencil text-purple-600"></i> Editar Categoria';
+            btnSubmitCategory.innerHTML = '<i class="ph-bold ph-check"></i> Atualizar'; btnCancelCategory.classList.remove('hidden'); inputNewCategory.focus(); window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function exitCategoryEditMode() {
+            editingCategoryName = null; inputNewCategory.value = '';
+            titleCategoryForm.innerHTML = '<div class="w-8 h-8 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center"><i class="ph-bold ph-tag"></i></div> Gestão de Categorias';
+            btnSubmitCategory.innerHTML = '<i class="ph-bold ph-plus"></i> Guardar'; btnCancelCategory.classList.add('hidden');
+        }
+
+        function renderCategories() {
+            selectCategory.innerHTML = categories.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join('');
+            gridCategories.innerHTML = categories.map(c => `
+                <div class="flex items-center justify-between p-4 border border-slate-200 rounded-2xl bg-slate-50 hover:bg-white hover:shadow-md transition-all group">
+                    <span class="font-bold text-slate-700">${escapeHTML(c)}</span>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button data-cat="${escapeHTML(c)}" class="btn-edit-cat p-2 text-slate-400 hover:text-indigo-600 bg-white rounded-xl shadow-sm border border-slate-100"><i class="ph-bold ph-pencil-simple text-sm"></i></button>
+                        <button data-cat="${escapeHTML(c)}" class="btn-remove-cat p-2 text-slate-400 hover:text-rose-600 bg-white rounded-xl shadow-sm border border-slate-100"><i class="ph-bold ph-trash text-sm"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Lógicas Centrais
+        function updateStock(id, change) { items = items.map(item => item.id === id ? { ...item, currentStock: Math.max(0, item.currentStock + change) } : item); saveData(); render(); }
+        function saveData() { localStorage.setItem('inventory_items_v2', JSON.stringify(items)); }
+
+        function enterEditMode(id) {
+            const item = items.find(i => i.id === id); if (!item) return;
+            editingId = id; document.getElementById('item-name').value = item.name; document.getElementById('item-code').value = item.code || '';
+            document.getElementById('item-category').value = categories.includes(item.category) ? item.category : categories[0];
+            document.getElementById('item-unit').value = item.unit || 'UN';
+            document.getElementById('item-stock').value = item.currentStock; document.getElementById('item-m1').value = item.month1; document.getElementById('item-m2').value = item.month2; document.getElementById('item-m3').value = item.month3;
+            formTitle.innerHTML = '<div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center"><i class="ph-bold ph-pencil"></i></div> Editar Produto';
+            btnSubmitForm.innerHTML = '<i class="ph-bold ph-check"></i> Salvar Alterações'; btnCancelEdit.classList.remove('hidden'); document.getElementById('item-name').focus(); window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function exitEditMode() {
+            editingId = null; formAddItem.reset(); document.getElementById('item-stock').value = 0; selectUnit.value = 'UN';
+            formTitle.innerHTML = '<div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center"><i class="ph-bold ph-plus"></i></div> Adicionar Novo Produto';
+            btnSubmitForm.innerHTML = '<i class="ph-bold ph-check"></i> Registar Produto'; btnCancelEdit.classList.add('hidden');
+        }
+
+        function calculateData(ignoreFilters = false) {
+            let dataToProcess = items;
+            if (!ignoreFilters && searchTerm) dataToProcess = dataToProcess.filter(item => item.name.toLowerCase().includes(searchTerm) || (item.code && item.code.toLowerCase().includes(searchTerm)));
+
+            let processedData = dataToProcess.map(item => {
+                const totalConsumo = item.month1 + item.month2 + item.month3;
+                const mediaMensal = Math.round(totalConsumo / 3);
+                const necessidadeComMargem = Math.ceil(mediaMensal * (1 + (safetyMargin / 100)));
+                const sugestaoCompra = Math.max(0, necessidadeComMargem - item.currentStock);
+                
+                let tendencia = 'stable';
+                if (item.month3 === 0 && item.month1 > 0) tendencia = 'up';
+                else if (item.month1 === 0 && item.month3 > 0) tendencia = 'down';
+                else if (item.month3 > 0) { const ratio = item.month1 / item.month3; if (ratio > 1.2) tendencia = 'up'; else if (ratio < 0.8) tendencia = 'down'; }
+
+                const consumoDiario = totalConsumo / 90;
+                const diasCobertura = consumoDiario > 0 ? Math.floor(item.currentStock / consumoDiario) : 999;
+                let status = 'ok'; if (item.currentStock <= mediaMensal * 0.3) status = 'critical'; else if (item.currentStock <= mediaMensal * 0.8) status = 'warning'; 
+
+                return { ...item, category: item.category || 'Outros', bought: item.bought || false, mediaMensal, necessidadeTotal: necessidadeComMargem, sugestaoCompra, status, tendencia, diasCobertura };
+            });
+
+            if (!ignoreFilters) {
+                if (currentFilter === 'buy') processedData = processedData.filter(item => item.sugestaoCompra > 0);
+                else if (currentFilter === 'critical') processedData = processedData.filter(item => item.status === 'critical');
+                else if (currentFilter === 'ok') processedData = processedData.filter(item => item.status === 'ok');
+            }
+
+            if (currentSort === 'name') processedData.sort((a, b) => a.name.localeCompare(b.name));
+            else if (currentSort === 'category') processedData.sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
+            else if (currentSort === 'stock') processedData.sort((a, b) => a.currentStock - b.currentStock);
+            else processedData.sort((a, b) => { if (b.sugestaoCompra !== a.sugestaoCompra) return b.sugestaoCompra - a.sugestaoCompra; if (a.status === 'critical' && b.status !== 'critical') return -1; if (b.status === 'critical' && a.status !== 'critical') return 1; return 0; });
+
+            return processedData;
+        }
+
+        function render() {
+            const inventoryData = calculateData(); thNecessidade.title = `Média + ${safetyMargin}% de segurança`;
+            const globalData = calculateData(true); 
             
-            const handleBackup = () => {
-                const dataStr = JSON.stringify(quotations, null, 2);
-                const blob = new Blob([dataStr], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `backup_cotacoes_${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            };
+            elSummaryTotal.textContent = globalData.length;
+            elSummaryBuy.textContent = globalData.filter(i => i.sugestaoCompra > 0).length;
+            elSummaryCritical.textContent = globalData.filter(i => i.status === 'critical').length;
 
-            const handleRestore = (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
+            const imminentStockouts = globalData.filter(i => i.diasCobertura <= 7 && i.sugestaoCompra > 0);
+            if (imminentStockouts.length > 0) { alertBanner.classList.remove('hidden'); alertBanner.classList.add('flex'); alertBannerText.textContent = `Faltam ${imminentStockouts.length} item(s) com ruptura iminente em menos de 7 dias!`; } 
+            else { alertBanner.classList.add('hidden'); alertBanner.classList.remove('flex'); }
 
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const json = JSON.parse(e.target.result);
-                        if (Array.isArray(json)) {
-                            if(confirm('Atenção: A restauração substituirá TODAS as cotações atuais. Esta ação é irreversível. Deseja continuar?')) {
-                                setQuotations(json);
-                                alert('Backup restaurado com sucesso!');
-                            }
-                        } else {
-                            alert('Arquivo inválido: O formato deve ser uma lista de cotações.');
-                        }
-                    } catch (error) {
-                        alert('Erro ao ler o arquivo JSON. Certifique-se de que é um arquivo válido.');
-                    }
-                };
-                reader.readAsText(file);
-            };
+            tableBody.innerHTML = '';
+            if (inventoryData.length === 0) { tableBody.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-slate-400 font-medium bg-white rounded-3xl mt-4 block">Nada encontrado com os filtros atuais.</td></tr>`; return; }
 
-            return (
-                <div className="max-w-4xl mx-auto space-y-8 animate-fade-in no-print">
-                    <div className="mb-6">
-                        <h2 className="text-3xl font-bold text-slate-800">Configurações</h2>
-                        <p className="text-slate-500 mt-1">Gerencie seus dados e preferências do sistema.</p>
-                    </div>
+            inventoryData.forEach(item => {
+                let statusClasses = 'bg-emerald-50 text-emerald-700 border-emerald-200'; let barColor = 'bg-emerald-500';
+                if (item.status === 'critical') { statusClasses = 'bg-rose-50 text-rose-700 border-rose-200'; barColor = 'bg-rose-500'; }
+                else if (item.status === 'warning') { statusClasses = 'bg-amber-50 text-amber-700 border-amber-200'; barColor = 'bg-amber-500'; }
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Card de Backup */}
-                        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-start relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition"><Icons.Download className="h-32 w-32 text-blue-600" /></div>
-                            
-                            <div className="bg-blue-50 p-3 rounded-xl text-blue-600 mb-5">
-                                <Icons.Download className="h-6 w-6" />
+                const healthPercentage = item.necessidadeTotal > 0 ? Math.min(100, (item.currentStock / item.necessidadeTotal) * 100) : 100;
+                let coberturaText = item.diasCobertura === 999 ? 'Sem saída' : (item.diasCobertura > 90 ? '> 3 meses' : `Dura ${item.diasCobertura} dias`);
+                let trendIcon = '<i class="ph-bold ph-minus text-slate-300" title="Estável"></i>';
+                if (item.tendencia === 'up') trendIcon = '<i class="ph-bold ph-trend-up text-rose-500" title="Aumentou"></i>'; else if (item.tendencia === 'down') trendIcon = '<i class="ph-bold ph-trend-down text-emerald-500" title="Diminuiu"></i>';
+
+                const maxVal = Math.max(item.month1, item.month2, item.month3, 1);
+                const h3 = Math.max((item.month3 / maxVal) * 100, 10); const h2 = Math.max((item.month2 / maxVal) * 100, 10); const h1 = Math.max((item.month1 / maxVal) * 100, 10);
+                
+                const uom = item.unit || 'UN';
+                const rowClasses = item.bought && item.sugestaoCompra > 0 
+                    ? 'bg-slate-50/50 opacity-60 grayscale scale-[0.99] transition-all' 
+                    : 'bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all scale-100';
+
+                const tr = document.createElement('tr');
+                tr.className = rowClasses + " group";
+                
+                tr.innerHTML = `
+                    <td class="p-5 text-center no-print first:rounded-l-2xl">
+                        ${item.sugestaoCompra > 0 ? `<input type="checkbox" data-id="${item.id}" class="chk-bought w-7 h-7 cursor-pointer accent-indigo-600 rounded-lg border-slate-300 focus:ring-indigo-500 shadow-sm" ${item.bought ? 'checked' : ''}>` : '<div class="w-7 h-7"></div>'}
+                    </td>
+                    <td class="p-5">
+                        <div class="flex items-center gap-4">
+                            <div class="hidden sm:flex items-end gap-1 h-8 w-6 cursor-help no-print" title="M-3: ${item.month3} | M-2: ${item.month2} | M-1: ${item.month1}">
+                                <div class="w-1.5 bg-slate-200 rounded-t transition-all" style="height: ${h3}%"></div>
+                                <div class="w-1.5 bg-slate-300 rounded-t transition-all" style="height: ${h2}%"></div>
+                                <div class="w-1.5 bg-indigo-400 rounded-t transition-all" style="height: ${h1}%"></div>
                             </div>
-                            <h3 className="text-xl font-bold text-slate-800 mb-2">Fazer Backup</h3>
-                            <p className="text-slate-500 text-sm mb-6 leading-relaxed">
-                                Exporte todas as suas cotações e dados para um arquivo JSON seguro. Recomendamos fazer isso regularmente para evitar perda de dados.
-                            </p>
-                            <button 
-                                onClick={handleBackup}
-                                className="mt-auto w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-medium transition shadow-lg shadow-blue-100 flex items-center justify-center"
-                            >
-                                <Icons.Download className="h-5 w-5 mr-2" /> Baixar Dados
-                            </button>
-                        </div>
-
-                        {/* Card de Recuperação */}
-                        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-start relative overflow-hidden group">
-                             <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition"><Icons.Upload className="h-32 w-32 text-orange-600" /></div>
-
-                            <div className="bg-orange-50 p-3 rounded-xl text-orange-600 mb-5">
-                                <Icons.Upload className="h-6 w-6" />
-                            </div>
-                            <h3 className="text-xl font-bold text-slate-800 mb-2">Restaurar Dados</h3>
-                            <p className="text-slate-500 text-sm mb-4 leading-relaxed">
-                                Importe um arquivo de backup (.json) para restaurar suas cotações. 
-                            </p>
-                            
-                            <div className="w-full bg-orange-50 border border-orange-100 rounded-lg p-3 flex gap-3 mb-6">
-                                <div className="shrink-0 pt-0.5"><Icons.AlertTriangle className="h-5 w-5 text-orange-500" /></div>
-                                <div className="text-xs text-orange-800 font-medium">
-                                    Cuidado: Restaurar um backup irá <strong>substituir</strong> todos os dados atuais existentes no sistema.
+                            <div>
+                                <div class="font-extrabold text-slate-800 text-base md:text-lg">${escapeHTML(item.name)}</div>
+                                <div class="text-xs mt-1.5 flex flex-wrap gap-2 items-center">
+                                    <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-bold tracking-wider">${item.category}</span>
+                                    ${item.code ? `<span class="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-md font-bold tracking-wider"><i class="ph-bold ph-barcode"></i> ${escapeHTML(item.code)}</span>` : ''}
                                 </div>
                             </div>
-
-                            <div className="mt-auto w-full">
-                                <label className="w-full bg-white border-2 border-dashed border-slate-300 hover:border-orange-400 hover:bg-orange-50 text-slate-500 hover:text-orange-600 py-3 px-4 rounded-xl font-medium transition cursor-pointer flex items-center justify-center">
-                                    <Icons.Upload className="h-5 w-5 mr-2" /> Selecionar Arquivo
-                                    <input 
-                                        type="file" 
-                                        accept=".json" 
-                                        onChange={handleRestore} 
-                                        className="hidden" 
-                                    />
-                                </label>
-                            </div>
                         </div>
-                    </div>
-                    
-                    <div className="bg-slate-100 rounded-xl p-6 text-center text-slate-500 text-sm">
-                        <p>O sistema utiliza o armazenamento local do seu navegador (LocalStorage). Limpar o cache do navegador pode apagar seus dados se não houver backup.</p>
-                    </div>
-                </div>
-            );
+                    </td>
+                    <td class="p-5 text-center no-print">
+                        <div class="flex items-center justify-center gap-2 mb-2">
+                            <button data-id="${item.id}" class="btn-stock-down text-slate-300 hover:text-rose-500 p-1 bg-white border border-slate-200 rounded-lg shadow-sm"><i class="ph-bold ph-minus"></i></button>
+                            <span class="inline-flex items-center justify-center px-3 py-1 rounded-lg text-sm font-black border ${statusClasses} min-w-[3rem] bg-white">${item.currentStock} ${uom}</span>
+                            <button data-id="${item.id}" class="btn-stock-up text-slate-300 hover:text-emerald-500 p-1 bg-white border border-slate-200 rounded-lg shadow-sm"><i class="ph-bold ph-plus"></i></button>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-1.5 max-w-[6rem] mx-auto overflow-hidden">
+                            <div class="h-1.5 rounded-full ${barColor}" style="width: ${healthPercentage}%"></div>
+                        </div>
+                        <div class="text-[10px] font-bold text-slate-400 mt-1.5">⏳ ${coberturaText}</div>
+                    </td>
+                    <td class="p-5 text-center text-slate-600 font-extrabold text-lg no-print">
+                        <div class="flex items-center justify-center gap-2">${item.mediaMensal} ${uom} ${trendIcon}</div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Média</div>
+                    </td>
+                    <td class="p-5 text-center bg-indigo-50/30">
+                        <span class="text-3xl md:text-4xl font-black ${item.sugestaoCompra > 0 ? 'text-indigo-600' : 'text-slate-300'}">${item.sugestaoCompra}</span>
+                        <span class="block text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">${uom}</span>
+                    </td>
+                    <td class="p-5 text-right no-print last:rounded-r-2xl min-w-[160px]">
+                        <div class="flex justify-end gap-1 opacity-20 group-hover:opacity-100 transition-opacity">
+                            <button data-id="${item.id}" class="btn-quote p-2.5 text-slate-400 hover:text-emerald-600 bg-white border border-slate-100 hover:border-emerald-200 rounded-xl shadow-sm" title="Pesquisar Preços"><i class="ph-bold ph-magnifying-glass-plus text-base"></i></button>
+                            <button data-id="${item.id}" class="btn-duplicate p-2.5 text-slate-400 hover:text-purple-600 bg-white border border-slate-100 hover:border-purple-200 rounded-xl shadow-sm" title="Duplicar"><i class="ph-bold ph-copy text-base"></i></button>
+                            <button data-id="${item.id}" class="btn-edit p-2.5 text-slate-400 hover:text-indigo-600 bg-white border border-slate-100 hover:border-indigo-200 rounded-xl shadow-sm" title="Editar"><i class="ph-bold ph-pencil-simple text-base"></i></button>
+                            <button data-id="${item.id}" class="btn-remove p-2.5 text-slate-400 hover:text-rose-600 bg-white border border-slate-100 hover:border-rose-200 rounded-xl shadow-sm" title="Remover"><i class="ph-bold ph-trash text-base"></i></button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        function escapeHTML(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
+        
+        function generatePrintReport() {
+            const inventoryData = calculateData(true); 
+            const itemsToBuy = inventoryData.filter(item => item.sugestaoCompra > 0);
+            let htmlContent = '';
+            
+            if (itemsToBuy.length === 0) {
+                htmlContent = `<div class="text-center mt-32"><div class="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-sm"><i class="ph-bold ph-check text-5xl"></i></div><h2 class="text-4xl font-black text-slate-800 tracking-tight">Tudo em dia!</h2><p class="text-slate-500 mt-4 text-xl font-medium">Estoque abastecido. Nenhuma compra pendente.</p></div>`;
+            } else {
+                const grouped = {}; itemsToBuy.forEach(item => { if (!grouped[item.category]) grouped[item.category] = []; grouped[item.category].push(item); });
+                const today = new Date().toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                const totalCategories = Object.keys(grouped).length;
+
+                htmlContent += `<div class="flex justify-between items-end mb-12 border-b-2 border-slate-100 pb-8"><div><div class="flex items-center gap-3 text-indigo-600 mb-3"><i class="ph-fill ph-shopping-bag text-3xl"></i><span class="font-extrabold tracking-widest uppercase text-sm">Relatório de Compras</span></div><h1 class="text-5xl font-black text-slate-900 tracking-tight">Lista Mensal</h1><p class="text-slate-500 font-bold capitalize mt-2 text-lg">${today}</p></div><div class="flex gap-4"><div class="bg-slate-50 border border-slate-200 rounded-3xl p-4 text-center min-w-[6rem] shadow-sm"><span class="block text-3xl font-black text-slate-800 leading-none">${totalCategories}</span><span class="block text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mt-2">Secções</span></div><div class="bg-indigo-50 border border-indigo-100 rounded-3xl p-4 text-center min-w-[6rem] shadow-sm"><span class="block text-3xl font-black text-indigo-700 leading-none">${itemsToBuy.length}</span><span class="block text-[11px] font-extrabold text-indigo-500 uppercase tracking-widest mt-2">Itens</span></div></div></div>`;
+
+                htmlContent += `<div class="space-y-10">`;
+                Object.keys(grouped).sort().forEach(category => {
+                    htmlContent += `<div class="avoid-page-break"><div class="flex items-center gap-5 mb-5"><h2 class="text-xl font-black text-slate-800 uppercase tracking-widest">${escapeHTML(category)}</h2><div class="flex-1 h-0.5 bg-slate-100"></div></div><div class="grid grid-cols-2 gap-5">`;
+                    grouped[category].sort((a, b) => a.name.localeCompare(b.name)).forEach(item => {
+                        const uom = item.unit || 'UN';
+                        htmlContent += `<div class="flex items-center justify-between p-4 border-2 border-slate-100 rounded-2xl bg-white avoid-page-break"><div class="flex items-center gap-4 overflow-hidden"><div class="w-7 h-7 rounded-full border-2 border-slate-300 flex-shrink-0"></div><div><span class="block font-extrabold text-slate-800 truncate text-base">${escapeHTML(item.name)}</span>${item.code ? `<span class="block text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-1">${escapeHTML(item.code)}</span>` : ''}</div></div><div class="flex items-center gap-5 flex-shrink-0 pl-2"><div class="text-right"><span class="block text-[10px] uppercase font-extrabold text-slate-400 tracking-widest">Tem</span><span class="block text-sm font-bold text-slate-600">${item.currentStock} ${uom}</span></div><div class="w-0.5 h-8 bg-slate-100"></div><div class="text-right min-w-[3rem]"><span class="block text-[10px] uppercase font-extrabold text-indigo-500 tracking-widest">Qtd</span><span class="block text-3xl font-black text-slate-900 leading-none">${item.sugestaoCompra}</span></div></div></div>`;
+                    });
+                    htmlContent += `</div></div>`;
+                });
+                htmlContent += `</div>`;
+            }
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`<!DOCTYPE html><html lang="pt-PT"><head><meta charset="UTF-8"><title>Relatório de Compras</title><script src="https://cdn.tailwindcss.com"><\/script><script src="https://unpkg.com/@phosphor-icons/web"><\/script><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet"><style>body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Plus Jakarta Sans', sans-serif; background-color: #ffffff; } .avoid-page-break { page-break-inside: avoid; } @page { margin: 1cm 1.5cm; }</style></head><body class="max-w-5xl mx-auto w-full text-black p-4">${htmlContent}<script>setTimeout(() => { window.print(); }, 1000);<\/script></body></html>`);
+            printWindow.document.close();
+        }
     </script>
 </body>
 </html>
