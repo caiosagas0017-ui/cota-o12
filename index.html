@@ -175,9 +175,9 @@
             </div>
         </div>
 
-        <!-- Formulário Moderno -->
+        <!-- Formulário Moderno (APENAS PARA ADICIONAR NOVO) -->
         <div id="add-form-container" class="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-100 no-print">
-            <h2 id="form-title" class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3">
+            <h2 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3">
                 <div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
                     <i class="ph-bold ph-plus"></i>
                 </div>
@@ -247,12 +247,9 @@
                         </span>
                     </label>
                     <div class="flex w-full md:w-auto gap-3">
-                        <button type="button" id="btn-cancel-edit" class="hidden flex-1 md:flex-none bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-2xl font-bold transition-all">
-                            Cancelar
-                        </button>
-                        <button type="submit" id="btn-submit-form" class="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 hover:shadow-indigo-300">
-                            <i class="ph-bold ph-check"></i>
-                            Registar Produto
+                        <button type="submit" class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 hover:shadow-indigo-300">
+                            <i class="ph-bold ph-plus"></i>
+                            Registar Novo Produto
                         </button>
                     </div>
                 </div>
@@ -271,15 +268,17 @@
                     </div>
                 </div>
                 <div class="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-                    <button id="btn-clear-cart" class="flex items-center justify-center px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors font-bold text-sm" title="Desmarcar carrinho">
-                        <i class="ph-bold ph-shopping-cart text-lg"></i>
-                    </button>
                     
+                    <select id="select-category-filter" class="w-full sm:w-auto px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 font-bold cursor-pointer">
+                        <option value="all">Todas as Categorias</option>
+                    </select>
+
                     <select id="select-filter" class="w-full sm:w-auto px-4 py-2.5 bg-indigo-50 border border-transparent rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-indigo-700 font-bold cursor-pointer">
-                        <option value="all">Ver Todos</option>
+                        <option value="all">Ver Todos (Status)</option>
                         <option value="buy">Em Falta (Comprar)</option>
                         <option value="critical">Risco Crítico</option>
                         <option value="ok">Estoque Saudável</option>
+                        <option value="dead">Estoque Parado</option>
                     </select>
 
                     <select id="select-sort" class="w-full sm:w-auto px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700 font-bold cursor-pointer">
@@ -291,7 +290,7 @@
 
                     <div class="relative w-full sm:w-64 flex-grow">
                         <i class="ph-bold ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="input-search" placeholder="Procurar (Nome ou Código)..." class="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm font-medium">
+                        <input type="text" id="input-search" placeholder="Procurar (Nome, Cód ou Cat)..." class="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm font-medium">
                     </div>
                 </div>
             </div>
@@ -301,7 +300,6 @@
                 <table class="w-full text-left table-spacing">
                     <thead>
                         <tr>
-                            <th class="px-5 py-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest text-center no-print">Chk</th>
                             <th class="px-5 py-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Produto</th>
                             <th class="px-5 py-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest text-center">Saúde do Estoque</th>
                             <th class="px-5 py-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest text-center">Média/Mês</th>
@@ -347,8 +345,8 @@
 
     </div> <!-- Fecho do App Principal -->
 
-    <!-- Modal Customizado UI (Mantido e Estilizado) -->
-    <div id="custom-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 backdrop-blur-sm px-4 no-print transition-all">
+    <!-- Modal Customizado UI -->
+    <div id="custom-modal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-[60] backdrop-blur-sm px-4 no-print transition-all">
         <div class="bg-white rounded-[2rem] shadow-2xl max-w-sm w-full p-8 fade-in border border-slate-100">
             <h3 class="text-xl font-black text-slate-800 mb-3 flex items-center gap-3" id="modal-title">Confirmação</h3>
             <p class="text-slate-500 font-medium mb-8 leading-relaxed" id="modal-message">Tem certeza?</p>
@@ -378,6 +376,85 @@
                     <i class="ph-bold ph-download-simple"></i> Gerar Arquivo
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- NOVO: Modal Flutuante de EDIÇÃO -->
+    <div id="modal-edit-item" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 backdrop-blur-sm px-4 no-print transition-all overflow-y-auto py-10">
+        <div class="bg-white rounded-[2rem] shadow-2xl max-w-4xl w-full p-6 md:p-8 fade-in border border-slate-100 my-auto">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3">
+                <div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
+                    <i class="ph-bold ph-pencil"></i>
+                </div>
+                Editar Produto
+            </h3>
+            <form id="form-edit-item" class="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+                <div class="md:col-span-5">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Nome do Produto</label>
+                    <input required type="text" id="edit-item-name" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium"/>
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Código Apoio</label>
+                    <input type="text" id="edit-item-code" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium"/>
+                </div>
+                <div class="md:col-span-4">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Categoria</label>
+                    <select id="edit-item-category" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium appearance-none">
+                        <!-- Preenchido via JS -->
+                    </select>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 text-center">Unidade</label>
+                    <select id="edit-item-unit" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-slate-600 appearance-none text-center">
+                        <option value="UN">UN</option><option value="KG">KG</option><option value="L">L</option><option value="CX">CX</option><option value="PC">PC</option><option value="PT">PT</option><option value="BL">BL</option><option value="RL">RL</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 text-center">Múltiplo</label>
+                    <input required type="number" id="edit-item-multiple" min="1" class="w-full p-3.5 bg-indigo-50 border border-indigo-100 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-indigo-700"/>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 text-center">Estoque Atual</label>
+                    <input required type="number" id="edit-item-stock" min="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-black text-slate-700"/>
+                </div>
+                <div class="md:col-span-3 grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center">M-1</label>
+                        <input required type="number" id="edit-item-m1" min="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center">M-2</label>
+                        <input required type="number" id="edit-item-m2" min="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center">M-3</label>
+                        <input required type="number" id="edit-item-m3" min="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
+                    </div>
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Observações</label>
+                    <input type="text" id="edit-item-notes" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium"/>
+                </div>
+
+                <div class="md:col-span-12 flex flex-col md:flex-row items-center justify-between gap-4 mt-4 border-t border-slate-100 pt-6">
+                    <label class="flex items-center gap-3 cursor-pointer group">
+                        <input type="checkbox" id="edit-item-apoio" class="w-5 h-5 accent-purple-600 rounded-lg cursor-pointer transition-all">
+                        <span class="text-sm font-bold text-slate-600 group-hover:text-purple-600 transition-colors">
+                            Incluir na exportação para o Sistema Apoio
+                        </span>
+                    </label>
+                    <div class="flex w-full md:w-auto gap-3">
+                        <button type="button" onclick="exitEditMode()" class="w-full md:w-auto bg-slate-100 hover:bg-slate-200 text-slate-700 px-8 py-3 rounded-2xl font-bold transition-all">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 hover:shadow-indigo-300">
+                            <i class="ph-bold ph-check"></i>
+                            Guardar Alterações
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -508,8 +585,6 @@
             { id: '111', code: '', name: 'Envelope pardo 18,5x25', category: 'Materiais Gráficos', unit: 'CX', currentStock: 0, month1: 4, month2: 4, month3: 4, bought: false }
         ];
 
-        // Atualizámos a chave do LocalStorage para 'inventory_items_v2' 
-        // para forçar o sistema a carregar a nova lista de produtos sem precisar de apagar o cache.
         let items = JSON.parse(localStorage.getItem('inventory_items_v2')) || defaultItems;
         let categories = JSON.parse(localStorage.getItem('inventory_categories_v2')) || defaultCategories;
         let safetyMargin = JSON.parse(localStorage.getItem('safety_margin')) || 15;
@@ -523,6 +598,7 @@
         let searchTerm = '';
         let currentSort = 'priority';
         let currentFilter = 'all';
+        let currentCategoryFilter = 'all';
 
         // --- ELEMENTOS DOM ---
         const btnToggleSettings = document.getElementById('btn-toggle-settings');
@@ -541,7 +617,7 @@
         const inputSearch = document.getElementById('input-search');
         const selectSort = document.getElementById('select-sort');
         const selectFilter = document.getElementById('select-filter');
-        const btnClearCart = document.getElementById('btn-clear-cart');
+        const selectCategoryFilter = document.getElementById('select-category-filter'); 
         
         const tabProducts = document.getElementById('tab-products');
         const tabCategories = document.getElementById('tab-categories');
@@ -558,9 +634,6 @@
         const btnCancelCategory = document.getElementById('btn-cancel-category');
 
         const formAddItem = document.getElementById('form-add-item');
-        const formTitle = document.getElementById('form-title');
-        const btnSubmitForm = document.getElementById('btn-submit-form');
-        const btnCancelEdit = document.getElementById('btn-cancel-edit');
         
         const tableBody = document.getElementById('table-body');
         const thNecessidade = document.getElementById('th-necessidade');
@@ -579,11 +652,13 @@
         const btnModalConfirm = document.getElementById('btn-modal-confirm');
         let modalAction = null;
 
-        // Elementos Modal Apoio
         const modalExportApoio = document.getElementById('modal-export-apoio');
         const selectExportApoioCat = document.getElementById('export-apoio-category');
         const btnExportApoioCancel = document.getElementById('btn-export-apoio-cancel');
         const btnExportApoioConfirm = document.getElementById('btn-export-apoio-confirm');
+
+        const modalEditItem = document.getElementById('modal-edit-item');
+        const formEditItem = document.getElementById('form-edit-item');
 
         // --- INICIALIZAÇÃO ---
         if (!lastCycleMonth) {
@@ -672,7 +747,7 @@
                 () => {
                     items = items.map(item => {
                         const newItem = {...item, month3: item.month2, month2: item.month1, month1: 0, bought: false};
-                        delete newItem.manualSuggestion; // Limpa as sugestões manuais ao virar o mês
+                        delete newItem.manualSuggestion; 
                         return newItem;
                     });
                     localStorage.setItem('last_cycle_month', currentMonthId); saveData(); render();
@@ -707,7 +782,6 @@
         });
 
         btnExportApoio.addEventListener('click', () => {
-            // Preenche o Select do modal com as categorias atualizadas
             selectExportApoioCat.innerHTML = '<option value="ALL">Todas as Categorias</option>' + 
                 categories.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join('');
             
@@ -727,7 +801,6 @@
             const selectedCat = selectExportApoioCat.value;
             let data = calculateData(true); 
             
-            // Aplica o filtro da categoria se não for "Todas"
             if (selectedCat !== 'ALL') {
                 data = data.filter(item => item.category === selectedCat);
             }
@@ -739,7 +812,6 @@
                 return; 
             }
 
-            // Ignora os itens que o usuário marcou para NUNCA exportar para o Apoio
             const itemsToExport = itemsToBuy.filter(item => item.exportApoio !== false);
 
             if (itemsToExport.length === 0) {
@@ -765,7 +837,6 @@
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=windows-1252;' });
                 const link = document.createElement("a"); const url = URL.createObjectURL(blob);
                 link.href = url; 
-                // Adiciona o nome da categoria no ficheiro baixado, se houver filtro
                 const catNameFile = selectedCat !== 'ALL' ? selectedCat.replace(/\s+/g, '_').toLowerCase() + '_' : '';
                 link.download = `upload_apoio_${catNameFile}${new Date().toISOString().split('T')[0]}.csv`;
                 
@@ -803,8 +874,7 @@
         inputSearch.addEventListener('input', (e) => { searchTerm = e.target.value.toLowerCase(); render(); });
         selectSort.addEventListener('change', (e) => { currentSort = e.target.value; render(); });
         selectFilter.addEventListener('change', (e) => { currentFilter = e.target.value; render(); });
-        btnClearCart.addEventListener('click', () => { items = items.map(item => ({ ...item, bought: false })); saveData(); render(); });
-        btnCancelEdit.addEventListener('click', exitEditMode);
+        selectCategoryFilter.addEventListener('change', (e) => { currentCategoryFilter = e.target.value; render(); }); 
         inputSafetyMargin.addEventListener('input', (e) => { safetyMargin = Number(e.target.value); localStorage.setItem('safety_margin', safetyMargin); render(); });
 
         // Deteta as alterações manuais no campo de "Sugerido" da tabela
@@ -829,7 +899,7 @@
             }
         });
 
-        // Adição e Edição de Produtos
+        // Adição de NOVO Produto Apenas
         formAddItem.addEventListener('submit', (e) => {
             e.preventDefault();
             const name = document.getElementById('item-name').value;
@@ -846,21 +916,41 @@
 
             if (!name) return;
 
-            if (editingId) {
-                items = items.map(item => item.id === editingId ? { ...item, name, code, category, unit, purchaseMultiple, notes, currentStock, month1, month2, month3, exportApoio } : item);
-                exitEditMode();
-            } else {
-                items.push({ id: Date.now().toString(), code, name, category, unit, purchaseMultiple, notes, currentStock, month1, month2, month3, bought: false, exportApoio });
-                formAddItem.reset(); document.getElementById('item-stock').value = 0; selectUnit.value = 'UN'; document.getElementById('item-multiple').value = 1; document.getElementById('item-apoio').checked = true;
-            }
+            items.unshift({ id: Date.now().toString(), code, name, category, unit, purchaseMultiple, notes, currentStock, month1, month2, month3, exportApoio });
+            formAddItem.reset(); document.getElementById('item-stock').value = 0; selectUnit.value = 'UN'; document.getElementById('item-multiple').value = 1; document.getElementById('item-apoio').checked = true;
+            
             saveData(); render();
+        });
+
+        // Edição de Produto via Modal
+        formEditItem.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!editingId) return;
+
+            const name = document.getElementById('edit-item-name').value;
+            const code = document.getElementById('edit-item-code').value.trim();
+            const category = document.getElementById('edit-item-category').value;
+            const unit = document.getElementById('edit-item-unit').value;
+            const purchaseMultiple = Number(document.getElementById('edit-item-multiple').value) || 1;
+            const notes = document.getElementById('edit-item-notes').value.trim();
+            const currentStock = Number(document.getElementById('edit-item-stock').value) || 0;
+            const month1 = Number(document.getElementById('edit-item-m1').value) || 0;
+            const month2 = Number(document.getElementById('edit-item-m2').value) || 0;
+            const month3 = Number(document.getElementById('edit-item-m3').value) || 0;
+            const exportApoio = document.getElementById('edit-item-apoio').checked;
+
+            items = items.map(item => item.id === editingId ? { ...item, name, code, category, unit, purchaseMultiple, notes, currentStock, month1, month2, month3, exportApoio } : item);
+            
+            exitEditMode();
+            saveData(); 
+            render();
         });
 
         // Tabela Ações
         tableBody.addEventListener('click', (e) => {
             const btnRemove = e.target.closest('.btn-remove'); const btnEdit = e.target.closest('.btn-edit'); const btnDuplicate = e.target.closest('.btn-duplicate');
             const btnQuote = e.target.closest('.btn-quote'); const btnStockUp = e.target.closest('.btn-stock-up'); const btnStockDown = e.target.closest('.btn-stock-down');
-            const chkBought = e.target.closest('.chk-bought');
+            const btnResetSuggestion = e.target.closest('.btn-reset-suggestion'); 
 
             if (btnRemove) {
                 const id = btnRemove.getAttribute('data-id'); const itemObj = items.find(i => i.id === id);
@@ -868,13 +958,24 @@
             } else if (btnEdit) { enterEditMode(btnEdit.getAttribute('data-id'));
             } else if (btnDuplicate) {
                 const itemToCopy = items.find(i => i.id === btnDuplicate.getAttribute('data-id'));
-                if (itemToCopy) { items.push({...itemToCopy, id: Date.now().toString(), name: itemToCopy.name + ' (Cópia)', bought: false}); saveData(); render(); }
+                if (itemToCopy) { items.unshift({...itemToCopy, id: Date.now().toString(), name: itemToCopy.name + ' (Cópia)'}); saveData(); render(); }
             } else if (btnQuote) {
                 const itemObj = items.find(i => i.id === btnQuote.getAttribute('data-id'));
                 if (itemObj) window.open(`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(itemObj.name)}`, '_blank');
             } else if (btnStockUp) { updateStock(btnStockUp.getAttribute('data-id'), 1);
             } else if (btnStockDown) { updateStock(btnStockDown.getAttribute('data-id'), -1);
-            } else if (chkBought) { items = items.map(item => item.id === chkBought.getAttribute('data-id') ? { ...item, bought: chkBought.checked } : item); saveData(); render(); }
+            } else if (btnResetSuggestion) {
+                const id = btnResetSuggestion.getAttribute('data-id');
+                items = items.map(item => {
+                    if (item.id === id) {
+                        const newItem = { ...item };
+                        delete newItem.manualSuggestion; 
+                        return newItem;
+                    }
+                    return item;
+                });
+                saveData(); render();
+            }
         });
 
         // Gestão Categorias
@@ -925,6 +1026,15 @@
 
         function renderCategories() {
             selectCategory.innerHTML = categories.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join('');
+            
+            const selectEditCat = document.getElementById('edit-item-category');
+            if (selectEditCat) {
+                selectEditCat.innerHTML = categories.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join('');
+            }
+            
+            selectCategoryFilter.innerHTML = '<option value="all">Todas as Categorias</option>' + 
+                categories.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join('');
+
             gridCategories.innerHTML = categories.map(c => `
                 <div class="flex items-center justify-between p-4 border border-slate-200 rounded-2xl bg-slate-50 hover:bg-white hover:shadow-md transition-all group">
                     <span class="font-bold text-slate-700">${escapeHTML(c)}</span>
@@ -942,26 +1052,41 @@
 
         function enterEditMode(id) {
             const item = items.find(i => i.id === id); if (!item) return;
-            editingId = id; document.getElementById('item-name').value = item.name; document.getElementById('item-code').value = item.code || '';
-            document.getElementById('item-category').value = categories.includes(item.category) ? item.category : categories[0];
-            document.getElementById('item-unit').value = item.unit || 'UN';
-            document.getElementById('item-multiple').value = item.purchaseMultiple || 1;
-            document.getElementById('item-notes').value = item.notes || '';
-            document.getElementById('item-stock').value = item.currentStock; document.getElementById('item-m1').value = item.month1; document.getElementById('item-m2').value = item.month2; document.getElementById('item-m3').value = item.month3;
-            document.getElementById('item-apoio').checked = item.exportApoio !== false; 
-            formTitle.innerHTML = '<div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center"><i class="ph-bold ph-pencil"></i></div> Editar Produto';
-            btnSubmitForm.innerHTML = '<i class="ph-bold ph-check"></i> Salvar Alterações'; btnCancelEdit.classList.remove('hidden'); document.getElementById('item-name').focus(); window.scrollTo({ top: 0, behavior: 'smooth' });
+            editingId = id; 
+            
+            document.getElementById('edit-item-name').value = item.name; 
+            document.getElementById('edit-item-code').value = item.code || '';
+            document.getElementById('edit-item-category').value = categories.includes(item.category) ? item.category : categories[0];
+            document.getElementById('edit-item-unit').value = item.unit || 'UN';
+            document.getElementById('edit-item-multiple').value = item.purchaseMultiple || 1;
+            document.getElementById('edit-item-notes').value = item.notes || '';
+            document.getElementById('edit-item-stock').value = item.currentStock; 
+            document.getElementById('edit-item-m1').value = item.month1; 
+            document.getElementById('edit-item-m2').value = item.month2; 
+            document.getElementById('edit-item-m3').value = item.month3;
+            document.getElementById('edit-item-apoio').checked = item.exportApoio !== false; 
+            
+            modalEditItem.classList.remove('hidden');
+            modalEditItem.classList.add('flex');
         }
 
         function exitEditMode() {
-            editingId = null; formAddItem.reset(); document.getElementById('item-stock').value = 0; selectUnit.value = 'UN'; document.getElementById('item-multiple').value = 1; document.getElementById('item-apoio').checked = true;
-            formTitle.innerHTML = '<div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center"><i class="ph-bold ph-plus"></i></div> Adicionar Novo Produto';
-            btnSubmitForm.innerHTML = '<i class="ph-bold ph-check"></i> Registar Produto'; btnCancelEdit.classList.add('hidden');
+            editingId = null; 
+            formEditItem.reset();
+            modalEditItem.classList.add('hidden');
+            modalEditItem.classList.remove('flex');
         }
 
         function calculateData(ignoreFilters = false) {
             let dataToProcess = items;
-            if (!ignoreFilters && searchTerm) dataToProcess = dataToProcess.filter(item => item.name.toLowerCase().includes(searchTerm) || (item.code && item.code.toLowerCase().includes(searchTerm)));
+            
+            if (!ignoreFilters && searchTerm) {
+                dataToProcess = dataToProcess.filter(item => 
+                    item.name.toLowerCase().includes(searchTerm) || 
+                    (item.code && item.code.toLowerCase().includes(searchTerm)) ||
+                    (item.category && item.category.toLowerCase().includes(searchTerm))
+                );
+            }
 
             let processedData = dataToProcess.map(item => {
                 const totalConsumo = item.month1 + item.month2 + item.month3;
@@ -970,13 +1095,11 @@
                 
                 let sugestaoCalculada = Math.max(0, necessidadeComMargem - item.currentStock);
                 
-                // Lógica de Múltiplos de Compra (Caixa Fechada)
                 const multiple = item.purchaseMultiple || 1;
                 if (sugestaoCalculada > 0 && multiple > 1) {
                     sugestaoCalculada = Math.ceil(sugestaoCalculada / multiple) * multiple;
                 }
                 
-                // Aplica o ajuste manual do usuário, caso tenha digitado outro valor
                 const sugestaoCompra = item.manualSuggestion !== undefined ? item.manualSuggestion : sugestaoCalculada;
                 
                 let tendencia = 'stable';
@@ -988,13 +1111,18 @@
                 const diasCobertura = consumoDiario > 0 ? Math.floor(item.currentStock / consumoDiario) : 999;
                 let status = 'ok'; if (item.currentStock <= mediaMensal * 0.3) status = 'critical'; else if (item.currentStock <= mediaMensal * 0.8) status = 'warning'; 
 
-                return { ...item, category: item.category || 'Outros', bought: item.bought || false, mediaMensal, necessidadeTotal: necessidadeComMargem, sugestaoCompra, status, tendencia, diasCobertura };
+                return { ...item, category: item.category || 'Outros', mediaMensal, necessidadeTotal: necessidadeComMargem, sugestaoCompra, status, tendencia, diasCobertura };
             });
 
             if (!ignoreFilters) {
                 if (currentFilter === 'buy') processedData = processedData.filter(item => item.sugestaoCompra > 0);
                 else if (currentFilter === 'critical') processedData = processedData.filter(item => item.status === 'critical');
                 else if (currentFilter === 'ok') processedData = processedData.filter(item => item.status === 'ok');
+                else if (currentFilter === 'dead') processedData = processedData.filter(item => item.status === 'dead');
+
+                if (currentCategoryFilter !== 'all') {
+                    processedData = processedData.filter(item => item.category === currentCategoryFilter);
+                }
             }
 
             if (currentSort === 'name') processedData.sort((a, b) => a.name.localeCompare(b.name));
@@ -1034,18 +1162,13 @@
                 const h3 = Math.max((item.month3 / maxVal) * 100, 10); const h2 = Math.max((item.month2 / maxVal) * 100, 10); const h1 = Math.max((item.month1 / maxVal) * 100, 10);
                 
                 const uom = item.unit || 'UN';
-                const rowClasses = item.bought && item.sugestaoCompra > 0 
-                    ? 'bg-slate-50/50 opacity-60 grayscale scale-[0.99] transition-all' 
-                    : 'bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all scale-100';
+                const rowClasses = 'bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all scale-100';
 
                 const tr = document.createElement('tr');
                 tr.className = rowClasses + " group";
                 
                 tr.innerHTML = `
-                    <td class="p-5 text-center no-print first:rounded-l-2xl">
-                        ${item.sugestaoCompra > 0 ? `<input type="checkbox" data-id="${item.id}" class="chk-bought w-7 h-7 cursor-pointer accent-indigo-600 rounded-lg border-slate-300 focus:ring-indigo-500 shadow-sm" ${item.bought ? 'checked' : ''}>` : '<div class="w-7 h-7"></div>'}
-                    </td>
-                    <td class="p-5">
+                    <td class="p-5 first:rounded-l-2xl">
                         <div class="flex items-center gap-4">
                             <div class="hidden sm:flex items-end gap-1 h-8 w-6 cursor-help no-print" title="M-3: ${item.month3} | M-2: ${item.month2} | M-1: ${item.month1}">
                                 <div class="w-1.5 bg-slate-200 rounded-t transition-all" style="height: ${h3}%"></div>
@@ -1077,8 +1200,8 @@
                         <div class="flex items-center justify-center gap-2">${item.mediaMensal} ${uom} ${trendIcon}</div>
                         <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Média</div>
                     </td>
-                    <td class="p-5 text-center bg-indigo-50/30 relative">
-                        ${item.manualSuggestion !== undefined ? `<div class="absolute top-2 right-2 w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center cursor-help" title="Modificado manualmente"><i class="ph-fill ph-push-pin text-orange-500 text-[10px]"></i></div>` : ''}
+                    <td class="p-5 text-center bg-indigo-50/30 relative group/sugestao">
+                        ${item.manualSuggestion !== undefined ? `<div data-id="${item.id}" class="btn-reset-suggestion absolute top-2 right-2 w-5 h-5 bg-orange-100 hover:bg-rose-100 rounded-full flex items-center justify-center cursor-pointer transition-colors" title="Remover bloqueio manual (Voltar ao automático)"><i class="ph-fill ph-push-pin text-orange-500 hover:text-rose-500 text-[10px]"></i></div>` : ''}
                         <input type="number" data-id="${item.id}" class="input-sugestao w-full max-w-[5rem] bg-transparent text-center text-3xl md:text-4xl font-black ${item.sugestaoCompra > 0 ? 'text-indigo-600' : 'text-slate-300'} border-b-2 border-transparent hover:border-indigo-200 focus:border-indigo-500 outline-none transition-colors" value="${item.sugestaoCompra}" min="0" step="${item.purchaseMultiple || 1}">
                         <span class="block text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">${uom}</span>
                         ${(item.purchaseMultiple || 1) > 1 ? `<span class="block text-[9px] text-indigo-500/70 font-bold mt-1 bg-indigo-100/50 rounded px-1 py-0.5 inline-block">Múltiplos de ${item.purchaseMultiple}</span>` : ''}
