@@ -32,6 +32,16 @@
             border-spacing: 0 10px;
             border-collapse: separate;
         }
+
+        /* Ocultar as setinhas padrão dos inputs de número para evitar que os números fiquem cortados */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield; /* Para o Firefox */
+        }
     </style>
 </head>
 <body class="min-h-screen text-slate-800 antialiased pb-12">
@@ -214,24 +224,24 @@
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 text-center" title="Qtd numa caixa fechada. Ex: se vende pacote com 12, coloque 12.">Múltiplo</label>
-                    <input required type="number" id="item-multiple" min="1" value="1" class="w-full p-3.5 bg-indigo-50 border border-indigo-100 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-indigo-700"/>
+                    <input required type="number" id="item-multiple" min="1" value="1" class="w-full py-3.5 px-1 bg-indigo-50 border border-indigo-100 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-indigo-700"/>
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 text-center">Estoque Atual</label>
-                    <input required type="number" id="item-stock" min="0" value="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-center font-black text-slate-700"/>
+                    <input required type="number" id="item-stock" min="0" value="0" class="w-full py-3.5 px-1 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-center font-black text-slate-700"/>
                 </div>
-                <div class="md:col-span-3 grid grid-cols-3 gap-3">
+                <div class="md:col-span-3 grid grid-cols-3 gap-1 sm:gap-3">
                     <div>
                         <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center" title="Consumo no Mês -1">M-1</label>
-                        <input required type="number" id="item-m1" min="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
+                        <input required type="number" id="item-m1" min="0" class="w-full py-3.5 px-1 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center" title="Consumo no Mês -2">M-2</label>
-                        <input required type="number" id="item-m2" min="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
+                        <input required type="number" id="item-m2" min="0" class="w-full py-3.5 px-1 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center" title="Consumo no Mês -3">M-3</label>
-                        <input required type="number" id="item-m3" min="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
+                        <input required type="number" id="item-m3" min="0" class="w-full py-3.5 px-1 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
                     </div>
                 </div>
                 <div class="md:col-span-3">
@@ -302,8 +312,8 @@
                         <tr>
                             <th class="px-5 py-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Produto</th>
                             <th class="px-5 py-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest text-center">Saúde do Estoque</th>
-                            <th class="px-5 py-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest text-center">Média/Mês</th>
-                            <th class="px-5 py-2 text-[10px] font-extrabold text-indigo-500 uppercase tracking-widest text-center bg-indigo-50/50 rounded-t-xl" id="th-necessidade">Sugerido</th>
+                            <th class="px-5 py-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest text-center" title="Consumo do mês atual e Média">Consumo / Média</th>
+                            <th class="px-5 py-2 text-[10px] font-extrabold text-indigo-500 uppercase tracking-widest text-center bg-indigo-50/50 rounded-t-xl" id="th-necessidade" title="Necessidade com margem de segurança aplicada">Sugerido</th>
                             <th class="px-5 py-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest text-right no-print">Ações</th>
                         </tr>
                     </thead>
@@ -357,7 +367,7 @@
         </div>
     </div>
 
-    <!-- Modal Exportação Apoio (Agora com seleção múltipla) -->
+    <!-- Modal Exportação Apoio -->
     <div id="modal-export-apoio" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 backdrop-blur-sm px-4 no-print transition-all">
         <div class="bg-white rounded-[2rem] shadow-2xl max-w-md w-full p-8 fade-in border border-slate-100">
             <h3 class="text-xl font-black text-slate-800 mb-3 flex items-center gap-3">
@@ -387,7 +397,7 @@
         </div>
     </div>
 
-    <!-- NOVO: Modal Flutuante de EDIÇÃO -->
+    <!-- Modal Flutuante de EDIÇÃO -->
     <div id="modal-edit-item" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 backdrop-blur-sm px-4 no-print transition-all overflow-y-auto py-10">
         <div class="bg-white rounded-[2rem] shadow-2xl max-w-4xl w-full p-6 md:p-8 fade-in border border-slate-100 my-auto">
             <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3">
@@ -420,24 +430,24 @@
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 text-center">Múltiplo</label>
-                    <input required type="number" id="edit-item-multiple" min="1" class="w-full p-3.5 bg-indigo-50 border border-indigo-100 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-indigo-700"/>
+                    <input required type="number" id="edit-item-multiple" min="1" class="w-full py-3.5 px-1 bg-indigo-50 border border-indigo-100 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-indigo-700"/>
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 text-center">Estoque Atual</label>
-                    <input required type="number" id="edit-item-stock" min="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-black text-slate-700"/>
+                    <input required type="number" id="edit-item-stock" min="0" class="w-full py-3.5 px-1 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-black text-slate-700"/>
                 </div>
-                <div class="md:col-span-3 grid grid-cols-3 gap-3">
+                <div class="md:col-span-3 grid grid-cols-3 gap-1 sm:gap-3">
                     <div>
                         <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center">M-1</label>
-                        <input required type="number" id="edit-item-m1" min="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
+                        <input required type="number" id="edit-item-m1" min="0" class="w-full py-3.5 px-1 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center">M-2</label>
-                        <input required type="number" id="edit-item-m2" min="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
+                        <input required type="number" id="edit-item-m2" min="0" class="w-full py-3.5 px-1 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 text-center">M-3</label>
-                        <input required type="number" id="edit-item-m3" min="0" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
+                        <input required type="number" id="edit-item-m3" min="0" class="w-full py-3.5 px-1 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center font-bold text-slate-600"/>
                     </div>
                 </div>
                 <div class="md:col-span-3">
@@ -906,7 +916,7 @@
         selectCategoryFilter.addEventListener('change', (e) => { currentCategoryFilter = e.target.value; render(); }); 
         inputSafetyMargin.addEventListener('input', (e) => { safetyMargin = Number(e.target.value); localStorage.setItem('safety_margin', safetyMargin); render(); });
 
-        // Deteta as alterações manuais no campo de "Sugerido" da tabela
+        // Deteta as alterações manuais no campo de "Sugerido" ou "Consumo" da tabela
         tableBody.addEventListener('change', (e) => {
             if (e.target.classList.contains('input-sugestao')) {
                 const id = e.target.getAttribute('data-id');
@@ -920,6 +930,19 @@
                         } else {
                             return { ...item, manualSuggestion: Number(val) };
                         }
+                    }
+                    return item;
+                });
+                saveData();
+                render();
+            } else if (e.target.classList.contains('input-month1')) {
+                const id = e.target.getAttribute('data-id');
+                const val = e.target.value;
+                items = items.map(item => {
+                    if (item.id === id) {
+                        const newItem = { ...item, month1: Number(val) >= 0 ? Number(val) : 0 };
+                        delete newItem.manualSuggestion; // Se mudou o consumo real, remove o pin manual para a máquina recalcular do zero
+                        return newItem;
                     }
                     return item;
                 });
@@ -1119,10 +1142,14 @@
 
             let processedData = dataToProcess.map(item => {
                 const totalConsumo = item.month1 + item.month2 + item.month3;
-                const mediaMensal = Math.round(totalConsumo / 3);
+                
+                // Melhoria de Precisão: Guardamos 1 casa decimal na média para a margem ser aplicada perfeitamente
+                const mediaMensal = Number((totalConsumo / 3).toFixed(1)); 
+                
                 const necessidadeComMargem = Math.ceil(mediaMensal * (1 + (safetyMargin / 100)));
                 
                 let sugestaoCalculada = Math.max(0, necessidadeComMargem - item.currentStock);
+                const sugestaoRealSemMultiplo = sugestaoCalculada; // Guardamos este valor para mostrar no Balão (Tooltip)
                 
                 const multiple = item.purchaseMultiple || 1;
                 if (sugestaoCalculada > 0 && multiple > 1) {
@@ -1140,7 +1167,7 @@
                 const diasCobertura = consumoDiario > 0 ? Math.floor(item.currentStock / consumoDiario) : 999;
                 let status = 'ok'; if (item.currentStock <= mediaMensal * 0.3) status = 'critical'; else if (item.currentStock <= mediaMensal * 0.8) status = 'warning'; 
 
-                return { ...item, category: item.category || 'Outros', mediaMensal, necessidadeTotal: necessidadeComMargem, sugestaoCompra, status, tendencia, diasCobertura };
+                return { ...item, category: item.category || 'Outros', mediaMensal, necessidadeTotal: necessidadeComMargem, sugestaoCompra, sugestaoRealSemMultiplo, status, tendencia, diasCobertura };
             });
 
             if (!ignoreFilters) {
@@ -1193,6 +1220,14 @@
                 const uom = item.unit || 'UN';
                 const rowClasses = 'bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all scale-100';
 
+                // O Raio-X da Matemática da Máquina (Tooltip)
+                let tooltipMath = `Cálculo Exato:\nMédia (${item.mediaMensal}) + Margem de ${safetyMargin}% = Necessidade Real (${item.necessidadeTotal})\nNecessidade (${item.necessidadeTotal}) - Estoque (${item.currentStock}) = Faltam ${item.sugestaoRealSemMultiplo}`;
+                if (item.manualSuggestion !== undefined) {
+                    tooltipMath = "📌 Você fixou este valor manualmente.\nA margem de segurança e o cálculo são ignorados.";
+                } else if ((item.purchaseMultiple || 1) > 1 && item.sugestaoRealSemMultiplo > 0) {
+                    tooltipMath += `\n📦 Como vende em múltiplas de ${item.purchaseMultiple}, arredondou para ${item.sugestaoCompra}`;
+                }
+
                 const tr = document.createElement('tr');
                 tr.className = rowClasses + " group";
                 
@@ -1225,13 +1260,20 @@
                         </div>
                         <div class="text-[10px] font-bold text-slate-400 mt-1.5">⏳ ${coberturaText}</div>
                     </td>
-                    <td class="p-5 text-center text-slate-600 font-extrabold text-lg no-print">
-                        <div class="flex items-center justify-center gap-2">${item.mediaMensal} ${uom} ${trendIcon}</div>
-                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Média</div>
+                    <td class="p-5 text-center no-print">
+                        <div class="flex flex-col items-center justify-center gap-1">
+                            <div class="flex items-center justify-center gap-1" title="Consumo do Mês Atual (Digite para atualizar e recalcular a média)">
+                                <input type="number" data-id="${item.id}" class="input-month1 w-16 sm:w-20 py-1.5 px-1 bg-slate-50 border border-slate-200 hover:border-indigo-300 rounded-xl text-center text-sm font-black text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" value="${item.month1}" min="0">
+                                <span class="text-[10px] font-bold text-slate-400">${uom}</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 flex items-center justify-center gap-1" title="Média dos últimos 3 meses">
+                                Média: ${item.mediaMensal} ${trendIcon}
+                            </div>
+                        </div>
                     </td>
-                    <td class="p-5 text-center bg-indigo-50/30 relative group/sugestao">
+                    <td class="p-5 text-center bg-indigo-50/30 relative group/sugestao" title="${tooltipMath}">
                         ${item.manualSuggestion !== undefined ? `<div data-id="${item.id}" class="btn-reset-suggestion absolute top-2 right-2 w-5 h-5 bg-orange-100 hover:bg-rose-100 rounded-full flex items-center justify-center cursor-pointer transition-colors" title="Remover bloqueio manual (Voltar ao automático)"><i class="ph-fill ph-push-pin text-orange-500 hover:text-rose-500 text-[10px]"></i></div>` : ''}
-                        <input type="number" data-id="${item.id}" class="input-sugestao w-full max-w-[5rem] bg-transparent text-center text-3xl md:text-4xl font-black ${item.sugestaoCompra > 0 ? 'text-indigo-600' : 'text-slate-300'} border-b-2 border-transparent hover:border-indigo-200 focus:border-indigo-500 outline-none transition-colors" value="${item.sugestaoCompra}" min="0" step="${item.purchaseMultiple || 1}">
+                        <input type="number" data-id="${item.id}" class="input-sugestao w-full max-w-[5rem] bg-transparent text-center text-3xl md:text-4xl font-black ${item.sugestaoCompra > 0 ? 'text-indigo-600' : 'text-slate-300'} border-b-2 border-transparent hover:border-indigo-200 focus:border-indigo-500 outline-none transition-colors cursor-help" value="${item.sugestaoCompra}" min="0" step="${item.purchaseMultiple || 1}">
                         <span class="block text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">${uom}</span>
                         ${(item.purchaseMultiple || 1) > 1 ? `<span class="block text-[9px] text-indigo-500/70 font-bold mt-1 bg-indigo-100/50 rounded px-1 py-0.5 inline-block">Múltiplos de ${item.purchaseMultiple}</span>` : ''}
                     </td>
