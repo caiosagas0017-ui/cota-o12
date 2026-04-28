@@ -357,19 +357,27 @@
         </div>
     </div>
 
-    <!-- Modal Exportação Apoio -->
+    <!-- Modal Exportação Apoio (Agora com seleção múltipla) -->
     <div id="modal-export-apoio" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center z-50 backdrop-blur-sm px-4 no-print transition-all">
-        <div class="bg-white rounded-[2rem] shadow-2xl max-w-sm w-full p-8 fade-in border border-slate-100">
+        <div class="bg-white rounded-[2rem] shadow-2xl max-w-md w-full p-8 fade-in border border-slate-100">
             <h3 class="text-xl font-black text-slate-800 mb-3 flex items-center gap-3">
                 <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
                     <i class="ph-bold ph-upload-simple text-xl"></i>
                 </div>
                 Exportar Apoio
             </h3>
-            <p class="text-slate-500 font-medium mb-6">Filtre a categoria que deseja incluir no arquivo de exportação para o sistema Apoio:</p>
-            <select id="export-apoio-category" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-purple-500 outline-none transition-all font-bold text-slate-700 mb-8 appearance-none cursor-pointer">
-                <!-- Opções geradas via JS -->
-            </select>
+            
+            <p class="text-slate-500 font-medium mb-4">Selecione as categorias que deseja incluir no arquivo de exportação para o sistema Apoio:</p>
+            
+            <div class="mb-3 flex gap-2">
+                <button id="btn-export-select-all" class="text-[10px] font-extrabold uppercase tracking-widest text-purple-600 bg-purple-50 px-3 py-1.5 rounded-lg hover:bg-purple-100 transition-colors">Marcar Todas</button>
+                <button id="btn-export-deselect-all" class="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg hover:bg-slate-200 transition-colors">Desmarcar Todas</button>
+            </div>
+
+            <div id="export-apoio-categories-container" class="space-y-2 mb-8 max-h-48 overflow-y-auto pr-2">
+                <!-- Checkboxes gerados via JS -->
+            </div>
+            
             <div class="flex justify-end gap-3">
                 <button id="btn-export-apoio-cancel" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-colors">Cancelar</button>
                 <button id="btn-export-apoio-confirm" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold transition-colors shadow-lg shadow-purple-200 flex items-center gap-2">
@@ -653,7 +661,9 @@
         let modalAction = null;
 
         const modalExportApoio = document.getElementById('modal-export-apoio');
-        const selectExportApoioCat = document.getElementById('export-apoio-category');
+        const containerExportApoioCat = document.getElementById('export-apoio-categories-container');
+        const btnExportSelectAll = document.getElementById('btn-export-select-all');
+        const btnExportDeselectAll = document.getElementById('btn-export-deselect-all');
         const btnExportApoioCancel = document.getElementById('btn-export-apoio-cancel');
         const btnExportApoioConfirm = document.getElementById('btn-export-apoio-confirm');
 
@@ -782,11 +792,24 @@
         });
 
         btnExportApoio.addEventListener('click', () => {
-            selectExportApoioCat.innerHTML = '<option value="ALL">Todas as Categorias</option>' + 
-                categories.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join('');
+            // Renderiza os checkboxes das categorias
+            containerExportApoioCat.innerHTML = categories.map(c => `
+                <label class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
+                    <input type="checkbox" value="${escapeHTML(c)}" checked class="chk-export-category w-5 h-5 accent-purple-600 rounded-md cursor-pointer border-slate-300">
+                    <span class="font-bold text-slate-700 text-sm">${escapeHTML(c)}</span>
+                </label>
+            `).join('');
             
             modalExportApoio.classList.remove('hidden');
             modalExportApoio.classList.add('flex');
+        });
+
+        btnExportSelectAll.addEventListener('click', () => {
+            document.querySelectorAll('.chk-export-category').forEach(chk => chk.checked = true);
+        });
+
+        btnExportDeselectAll.addEventListener('click', () => {
+            document.querySelectorAll('.chk-export-category').forEach(chk => chk.checked = false);
         });
 
         btnExportApoioCancel.addEventListener('click', () => {
@@ -795,20 +818,26 @@
         });
 
         btnExportApoioConfirm.addEventListener('click', () => {
+            const checkedBoxes = Array.from(document.querySelectorAll('.chk-export-category:checked'));
+            const selectedCats = checkedBoxes.map(chk => chk.value);
+
+            if (selectedCats.length === 0) {
+                showModal('<i class="ph-bold ph-warning text-amber-500"></i> Atenção', 'Tem de selecionar pelo menos uma categoria para exportar.', true);
+                return;
+            }
+
             modalExportApoio.classList.add('hidden');
             modalExportApoio.classList.remove('flex');
 
-            const selectedCat = selectExportApoioCat.value;
             let data = calculateData(true); 
             
-            if (selectedCat !== 'ALL') {
-                data = data.filter(item => item.category === selectedCat);
-            }
+            // Filtra os itens para incluírem apenas as categorias selecionadas
+            data = data.filter(item => selectedCats.includes(item.category));
 
             const itemsToBuy = data.filter(item => item.sugestaoCompra > 0);
             
             if (itemsToBuy.length === 0) { 
-                showModal('<i class="ph-bold ph-info text-blue-500"></i> Info', `Sem itens para comprar${selectedCat !== 'ALL' ? ' nesta categoria' : ''}.`, true); 
+                showModal('<i class="ph-bold ph-info text-blue-500"></i> Info', `Sem itens para comprar nas categorias selecionadas.`, true); 
                 return; 
             }
 
@@ -837,7 +866,7 @@
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=windows-1252;' });
                 const link = document.createElement("a"); const url = URL.createObjectURL(blob);
                 link.href = url; 
-                const catNameFile = selectedCat !== 'ALL' ? selectedCat.replace(/\s+/g, '_').toLowerCase() + '_' : '';
+                const catNameFile = selectedCats.length === categories.length ? '' : 'filtrado_';
                 link.download = `upload_apoio_${catNameFile}${new Date().toISOString().split('T')[0]}.csv`;
                 
                 document.body.appendChild(link); link.click(); document.body.removeChild(link);
